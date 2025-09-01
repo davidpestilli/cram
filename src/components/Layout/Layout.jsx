@@ -11,9 +11,9 @@ const Layout = ({ children, showFooter = true }) => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-gray-50">
       <Header />
-      <main className="flex-1 bg-gradient-to-br from-primary-50 to-secondary-50">
+      <main className="flex-1 bg-gradient-primary">
         {children}
       </main>
       {showFooter && <Footer />}

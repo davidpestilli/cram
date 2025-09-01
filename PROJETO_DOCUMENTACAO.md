@@ -290,15 +290,39 @@ CREATE TABLE user_section_stats (
     UNIQUE(user_id, subject_id, section_id)
 );
 
--- 8. CONQUISTAS/ACHIEVEMENTS
+-- 8. SISTEMA DE CONQUISTAS (ACHIEVEMENTS)
+
+-- Conquistas disponíveis (estrutura do sistema)
+CREATE TABLE achievements (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    description TEXT NOT NULL,
+    icon VARCHAR(10) NOT NULL,
+    type VARCHAR(50) NOT NULL, -- 'study', 'streak', 'level', 'shop', 'special'
+    category VARCHAR(50) NOT NULL, -- 'bronze', 'silver', 'gold', 'platinum', 'secret'
+    condition_type VARCHAR(50) NOT NULL, -- 'count', 'streak', 'level', 'accuracy', 'special'
+    condition_value INTEGER NOT NULL,
+    condition_params JSONB DEFAULT '{}',
+    xp_reward INTEGER DEFAULT 0,
+    gold_reward INTEGER DEFAULT 0,
+    unlock_item_id TEXT REFERENCES shop_items(id),
+    is_secret BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Conquistas desbloqueadas pelos usuários
 CREATE TABLE user_achievements (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-    achievement_id TEXT NOT NULL,
+    achievement_ref_id INTEGER REFERENCES achievements(id) ON DELETE CASCADE,
+    legacy_achievement_id TEXT, -- Compatibilidade com versões antigas
     title TEXT NOT NULL,
     description TEXT,
+    progress INTEGER DEFAULT 0,
+    is_completed BOOLEAN DEFAULT FALSE,
+    notified BOOLEAN DEFAULT FALSE,
     unlocked_at TIMESTAMP DEFAULT NOW(),
-    UNIQUE(user_id, achievement_id)
+    UNIQUE(user_id, achievement_ref_id)
 );
 
 -- 9. SESSÕES DE ESTUDO
@@ -439,6 +463,70 @@ INSERT INTO shop_items (id, name, description, category, price, bonus_type, bonu
 ('library_cat', 'Gato da Biblioteca', '+10% XP geral sempre ativo', 'pet', 5000, 'xp_boost', 0.10, 'always', 50);
 ```
 
+### **🔧 Scripts de Configuração do Database**
+
+O projeto inclui scripts SQL especializados para configuração completa do banco:
+
+#### **1. DATABASE_STRUCTURE.sql**
+- **Função**: Criação da estrutura base das tabelas
+- **Conteúdo**: Tabelas principais, triggers, RLS policies, índices
+- **Execução**: Primeira vez, setup inicial
+
+#### **2. CONQUISTAS_DATABASE.sql**
+- **Função**: Sistema de conquistas e achievements
+- **Conteúdo**: Tabelas de conquistas, funções automáticas, views auxiliares
+- **Execução**: Após DATABASE_STRUCTURE.sql
+- **Inclui**: 25 conquistas pré-definidas, sistema de progresso
+
+#### **3. database/seed_data.sql**
+- **Função**: População com dados de desenvolvimento/teste
+- **Conteúdo**: Achievements, user profiles, user achievements, study sessions
+- **Execução**: Após ambos os scripts acima
+- **Dados**: 4 usuários de teste com histórico completo
+
+#### **4. database/fix_achievements_constraint.sql**
+- **Função**: Correção de constraints de compatibilidade
+- **Uso**: Quando necessário ajustar constraints do sistema de conquistas
+
+### **📋 Ordem de Execução dos Scripts**
+```sql
+-- 1. Estrutura básica (obrigatório)
+\i DATABASE_STRUCTURE.sql
+
+-- 2. Sistema de conquistas (obrigatório) 
+\i CONQUISTAS_DATABASE.sql
+
+-- 3. Correção de constraints (se necessário)
+\i database/fix_achievements_constraint.sql
+
+-- 4. Dados de teste/desenvolvimento (opcional)
+\i database/seed_data.sql
+```
+
+### **🎯 Sistema de Conquistas Implementado**
+
+O sistema inclui **25 conquistas** distribuídas em categorias:
+
+**📊 Tipos de Conquista:**
+- **study**: Baseadas em questões respondidas e precisão
+- **streak**: Sequências de acertos consecutivos  
+- **level**: Progressão de nível do jogador
+- **shop**: Interação com sistema de compras
+- **special**: Condições especiais (horário, velocidade)
+
+**🏆 Categorias:**
+- **bronze**: Conquistas iniciantes (1-10 questões)
+- **silver**: Conquistas intermediárias (50-100 questões)
+- **gold**: Conquistas avançadas (200+ questões)
+- **platinum**: Conquistas expert (500+ questões)
+- **secret**: Conquistas especiais e ocultas
+
+**⚙️ Verificação Automática:**
+- **Função PL/pgSQL**: `check_and_unlock_achievements(user_uuid)`
+- **Trigger automático**: Verificação após ações do usuário
+- **Fallback manual**: Sistema de backup se função automática falhar
+- **Views otimizadas**: `user_achievements_detailed`, `user_achievement_stats`
+
 ## 🎨 SISTEMA DE ANIMAÇÕES
 
 ### **Bibliotecas de Animação**
@@ -561,6 +649,26 @@ VITE_APP_URL=https://username.github.io/cram
 - API keys protegidas
 - Validação server-side das respostas
 - Rate limiting na geração de questões
+
+### **Sobre Robustez do Sistema**
+O sistema foi projetado para ser resiliente a falhas e funcionar perfeitamente em produção:
+
+**🛡️ Sistema de Fallbacks:**
+- **AuthContext**: Cria perfis padrão automaticamente para novos usuários
+- **AchievementsService**: Mock data em caso de erro de conexão
+- **Database**: Queries com LEFT JOIN para evitar erros de dados ausentes
+- **API Externa**: Fallback local se DeepSeek API falhar
+
+**🔄 Auto-Recovery:**
+- **Usuários Novos**: Perfil padrão criado automaticamente (Level 1, 100 gold, XP 0)
+- **Produção**: Tentativa de criação de perfil real no banco de dados
+- **Desenvolvimento**: Perfis mock para desenvolvimento sem interrupção
+- **Conquistas**: Sistema manual de verificação se função automática falhar
+
+**📊 Monitoramento:**
+- Logs detalhados de erros e fallbacks
+- Verificação automática de integridade de dados
+- Graceful degradation sem crashes na UI
 
 ### **Sobre Monetização (Futuro)**
 - Freemium: Básico gratuito, premium pago

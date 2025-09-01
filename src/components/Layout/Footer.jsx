@@ -107,7 +107,7 @@ const Footer = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex flex-col sm:flex-row justify-between items-center text-xs text-gray-500">
             <div className="mb-2 sm:mb-0">
-              Versão 1.0 - Sprint 2 | Desenvolvido com React + Vite + Supabase
+              Versão 1.0 - Sprint 10 | Desenvolvido com React + Vite + Supabase
             </div>
             <div className="flex space-x-4">
               <span>Status: 🟢 Online</span>

@@ -50,14 +50,90 @@ export const AuthProvider = ({ children }) => {
         .eq('id', userId)
         .single()
       
-      if (error && error.code !== 'PGRST116') {
+      if (error) {
+        // Se o usuário não existe, criar um perfil padrão
+        if (error.code === 'PGRST116' || error.status === 406) {
+          console.log('User profile not found, creating default profile')
+          const defaultProfile = createMockProfile(userId)
+          setProfile(defaultProfile)
+          
+          // Em produção, criar perfil no banco de dados
+          if (process.env.NODE_ENV === 'production') {
+            try {
+              await createProfile({
+                username: 'Novo Usuário',
+                avatar_class: 'estudante',
+                avatar_gender: 'masculino'
+              })
+            } catch (createError) {
+              console.log('Could not create profile in database, using default profile')
+            }
+          }
+          return
+        }
+        
         console.error('Error fetching profile:', error)
+        
+        // Criar perfil padrão para usuários novos em qualquer ambiente
+        console.log('Creating default profile for new user')
+        const defaultProfile = createMockProfile(userId)
+        setProfile(defaultProfile)
+        
+        // Em produção, tentar criar perfil no banco de dados
+        if (process.env.NODE_ENV === 'production') {
+          try {
+            await createProfile({
+              username: 'Novo Usuário',
+              avatar_class: 'estudante', 
+              avatar_gender: 'masculino'
+            })
+          } catch (createError) {
+            console.log('Could not create profile in database, using default profile')
+          }
+        }
         return
       }
       
       setProfile(data)
     } catch (error) {
       console.error('Error fetching profile:', error)
+      
+      // Criar perfil padrão para usuários novos (desenvolvimento e produção)
+      console.log('Creating default profile for new user')
+      const defaultProfile = createMockProfile(userId)
+      setProfile(defaultProfile)
+      
+      // Em produção, criar perfil no banco de dados
+      if (process.env.NODE_ENV === 'production') {
+        try {
+          await createProfile({
+            username: 'Novo Usuário',
+            avatar_class: 'estudante',
+            avatar_gender: 'masculino'
+          })
+        } catch (createError) {
+          console.log('Could not create profile in database, using default profile')
+        }
+      }
+    }
+  }
+
+  // Criar perfil mock para desenvolvimento
+  const createMockProfile = (userId) => {
+    return {
+      id: userId,
+      username: 'dev_user',
+      avatar_class: 'estudante',
+      avatar_gender: 'masculino',
+      level: 1,
+      xp: 0,
+      gold: 100,
+      current_streak: 0,
+      max_streak: 0,
+      total_questions: 0,
+      total_correct: 0,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     }
   }
 

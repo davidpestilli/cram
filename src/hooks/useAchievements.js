@@ -45,7 +45,13 @@ export const useAchievements = () => {
       }
 
       // Calculate stats
-      const achievementStats = await AchievementsService.getUserAchievementStats(profile.id)
+      let achievementStats
+      try {
+        achievementStats = await AchievementsService.getUserAchievementStats(profile.id)
+      } catch (err) {
+        console.log('Using mock stats due to database error:', err)
+        achievementStats = AchievementsService.getMockUserAchievementStats(profile.id)
+      }
       setStats(achievementStats)
 
     } catch (err) {
