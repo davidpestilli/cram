@@ -412,24 +412,46 @@ export class QuestionsService {
 
   static async getUnansweredQuestions(userId, subjectId, sectionId, limit = 10) {
     try {
-      // Buscar questões que existem mas o usuário nunca respondeu
-      const { data, error } = await supabase
+      console.log('Getting unanswered questions for:', { userId, subjectId, sectionId })
+      
+      // Primeiro buscar todas as questões da seção
+      const { data: allQuestions, error: questionsError } = await supabase
         .from('questions')
         .select('*')
         .eq('subject_id', subjectId)
         .eq('section_id', sectionId)
-        .not('id', 'in', `(
-          SELECT question_id 
-          FROM user_answers 
-          WHERE user_id = '${userId}'
-        )`)
-        .limit(limit)
 
-      if (error) throw error
+      if (questionsError) throw questionsError
 
-      console.log(`Found ${data.length} unanswered questions for user`)
+      // Se não há questões, retornar vazio
+      if (!allQuestions || allQuestions.length === 0) {
+        return {
+          questions: [],
+          source: 'unanswered',
+          created: false
+        }
+      }
+
+      // Buscar IDs das questões que o usuário já respondeu
+      const { data: answeredQuestions, error: answersError } = await supabase
+        .from('user_answers')
+        .select('question_id')
+        .eq('user_id', userId)
+        .in('question_id', allQuestions.map(q => q.id))
+
+      // Se erro ao buscar respostas, assumir que não respondeu nenhuma
+      const answeredIds = new Set(
+        answersError ? [] : (answeredQuestions?.map(a => a.question_id) || [])
+      )
+
+      // Filtrar questões não respondidas
+      const unansweredQuestions = allQuestions
+        .filter(q => !answeredIds.has(q.id))
+        .slice(0, limit)
+
+      console.log(`Found ${unansweredQuestions.length} unanswered questions for user`)
       return {
-        questions: data || [],
+        questions: unansweredQuestions,
         source: 'unanswered',
         created: false
       }
@@ -445,35 +467,57 @@ export class QuestionsService {
 
   static async getQuestionStats(userId, subjectId, sectionId) {
     try {
-      // Estatísticas de questões disponíveis para o usuário
-      const { data: totalQuestions } = await supabase
+      console.log('Getting question stats for:', { userId, subjectId, sectionId })
+      
+      // Primeiro buscar todas as questões da seção
+      const { data: allQuestions, error: questionsError } = await supabase
         .from('questions')
-        .select('id', { count: 'exact' })
+        .select('id')
         .eq('subject_id', subjectId)
         .eq('section_id', sectionId)
 
-      const { data: answeredQuestions } = await supabase
-        .from('user_answers')
-        .select('question_id', { count: 'exact' })
-        .eq('user_id', userId)
-        .in('question_id', `(
-          SELECT id FROM questions 
-          WHERE subject_id = ${subjectId} 
-          AND section_id = ${sectionId}
-        )`)
+      if (questionsError) {
+        console.error('Error fetching questions:', questionsError)
+        throw questionsError
+      }
 
-      const total = totalQuestions?.length || 0
-      const answered = answeredQuestions?.length || 0
+      const total = allQuestions?.length || 0
+      const questionIds = allQuestions?.map(q => q.id) || []
+      
+      let answered = 0
+      if (total > 0 && questionIds.length > 0) {
+        // Buscar respostas do usuário para essas questões
+        const { data: userAnswers, error: answersError } = await supabase
+          .from('user_answers')
+          .select('question_id')
+          .eq('user_id', userId)
+          .in('question_id', questionIds)
+
+        if (answersError) {
+          console.error('Error fetching user answers:', answersError)
+          // Não falhar por erro de respostas, apenas assumir 0
+        } else {
+          // Contar questões únicas respondidas
+          const uniqueAnsweredQuestions = new Set(userAnswers?.map(a => a.question_id) || [])
+          answered = uniqueAnsweredQuestions.size
+        }
+      }
+
       const unanswered = total - answered
-
-      return {
+      
+      const stats = {
         total,
         answered,
         unanswered,
         canGenerateNew: true // sempre pode gerar novas
       }
+
+      console.log('Question stats calculated:', stats)
+      return stats
+
     } catch (error) {
       console.error('Error getting question stats:', error)
+      // Retornar stats padrão para não quebrar a UI
       return {
         total: 0,
         answered: 0,
