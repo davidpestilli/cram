@@ -1,20 +1,78 @@
+import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { Link } from 'react-router-dom'
 import Layout from '../components/Layout/Layout'
+import Tutorial from '../components/Tutorial'
+import { defaultTutorialSteps } from '../constants/tutorialSteps'
+import { FAQ } from '../components/HelpSystem'
+import HelpSystem from '../components/HelpSystem'
 
 const Dashboard = () => {
   const { user, profile } = useAuth()
+  const [showTutorial, setShowTutorial] = useState(false)
+  const [showFAQ, setShowFAQ] = useState(false)
+
+  // Show tutorial for new users
+  useEffect(() => {
+    if (profile && !localStorage.getItem(`tutorial_completed_${user?.id}`)) {
+      setShowTutorial(true)
+    }
+  }, [profile, user])
+
+  const handleTutorialComplete = () => {
+    setShowTutorial(false)
+    if (user?.id) {
+      localStorage.setItem(`tutorial_completed_${user.id}`, 'true')
+    }
+  }
 
   return (
     <Layout>
       <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">
-            Dashboard
-          </h2>
-          <p className="text-gray-600">
-            Bem-vindo de volta! Pronto para estudar?
-          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                Dashboard
+              </h2>
+              <p className="text-gray-600">
+                Bem-vindo de volta! Pronto para estudar?
+              </p>
+            </div>
+            
+            {/* Help Actions */}
+            <div className="flex items-center space-x-2">
+              <HelpSystem 
+                helpText="Clique aqui para ver as perguntas mais frequentes"
+                position="bottom"
+              >
+                <button
+                  onClick={() => setShowFAQ(true)}
+                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
+                  aria-label="Ajuda"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </button>
+              </HelpSystem>
+              
+              <HelpSystem 
+                helpText="Clique aqui para ver o tutorial novamente"
+                position="bottom"
+              >
+                <button
+                  onClick={() => setShowTutorial(true)}
+                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
+                  aria-label="Tutorial"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                  </svg>
+                </button>
+              </HelpSystem>
+            </div>
+          </div>
         </div>
 
         {!profile ? (
@@ -120,6 +178,19 @@ const Dashboard = () => {
           </div>
         )}
       </div>
+      
+      {/* Tutorial Modal */}
+      <Tutorial
+        isOpen={showTutorial}
+        onClose={handleTutorialComplete}
+        steps={defaultTutorialSteps}
+      />
+      
+      {/* FAQ Modal */}
+      <FAQ
+        isOpen={showFAQ}
+        onClose={() => setShowFAQ(false)}
+      />
     </Layout>
   )
 }

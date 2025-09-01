@@ -3,6 +3,9 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { QuestionsService } from '../services/questionsService'
 import Layout from '../components/Layout/Layout'
+import StudyModeSelector from '../components/StudyModeSelector'
+import spacedRepetitionService from '../services/spacedRepetitionService'
+import { STUDY_MODES } from '../services/studyModeService'
 
 const QuestionSelection = () => {
   const { subjectId, sectionId } = useParams()
