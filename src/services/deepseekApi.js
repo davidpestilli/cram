@@ -58,35 +58,74 @@ export const generateQuestions = async (sectionContent, count = 10) => {
 }
 
 const createPrompt = (sectionContent, count) => {
+  const artigo = sectionContent.artigo || 'Artigo não especificado'
+  const titulo = sectionContent.titulo || 'Seção sem título'
+  const conteudo = sectionContent.conteudo || {}
+  
   return `
-Com base no seguinte texto de Direito Penal brasileiro, crie exatamente ${count} questões no formato VERDADEIRO/FALSO.
+Você é um especialista em Direito Penal brasileiro criando questões para concursos públicos estilo CESPE/CEBRASPE.
 
-TEXTO BASE:
-${JSON.stringify(sectionContent, null, 2)}
+CONTEÚDO PARA ANÁLISE:
+📖 ARTIGO: ${artigo}
+📝 TEMA: ${titulo}
+📋 CONTEÚDO COMPLETO:
+${JSON.stringify(conteudo, null, 2)}
 
-INSTRUÇÕES IMPORTANTES:
-1. Crie questões inteligentes e educativas
-2. Para questões FALSAS, modifique sutilmente o texto original (altere penas, elementos do tipo, condições, etc.)
-3. Para questões VERDADEIRAS, use o texto original como base
-4. Foque em detalhes importantes: penas, elementos objetivos, agravantes, atenuantes
-5. Evite questões óbvias demais ou muito complexas
-6. Cada questão deve testar conhecimento específico do texto
+CRIAR ${count} QUESTÕES VERDADEIRO/FALSO de alta qualidade seguindo estes padrões:
 
-FORMATO DE RESPOSTA (JSON):
+🎯 TIPOS DE QUESTÕES A CRIAR:
+1. ELEMENTOS DO TIPO: Testar components específicos do crime
+2. PENAS E SANÇÕES: Valores exatos, modalidades (reclusão/detenção)  
+3. CONDUTAS TÍPICAS: Verbos nucleares e suas variações
+4. SUJEITOS: Ativo, passivo, funcionário público
+5. OBJETOS JURÍDICOS: Bens protegidos específicos
+6. QUALIFICADORAS/AGRAVANTES: Circunstâncias especiais
+7. CONSUMAÇÃO/TENTATIVA: Momento consumativo
+8. CONCURSO DE CRIMES: Relação com outros tipos penais
+
+🔧 TÉCNICAS PARA QUESTÕES FALSAS:
+- Alterar valores de pena (trocar anos, modalidade reclusão/detenção)
+- Modificar elementos objetivos (verbos, objetos, circunstâncias)
+- Trocar sujeitos ativos (qualquer pessoa vs funcionário público)
+- Alterar circunstâncias qualificadoras ou agravantes  
+- Modificar requisitos específicos do tipo penal
+
+💯 QUALIDADE ESPERADA:
+- Precisão jurídica absoluta
+- Linguagem técnica apropriada
+- Testes de conhecimento específico (não genérico)
+- Explicações didáticas com fundamento legal
+- Citação do texto original como fonte
+
+EXEMPLOS DE QUESTÕES DE QUALIDADE:
+
+✅ VERDADEIRA:
+"A falsificação de selo destinado a controle tributário, mediante fabricação ou alteração, é punida com reclusão de dois a oito anos e multa, conforme o art. 293 do Código Penal."
+
+❌ FALSA (modificação sutil):
+"A falsificação de selo destinado a controle tributário é punida com detenção de dois a oito anos e multa."
+ERRO: Pena é RECLUSÃO, não detenção.
+
+FORMATO DE RESPOSTA (JSON válido):
 {
   "questions": [
     {
       "id": 1,
-      "question_text": "Texto da questão aqui",
+      "question_text": "Questão específica baseada no conteúdo real",
       "correct_answer": true,
-      "explanation": "Explicação detalhada da resposta",
-      "source_text": "Trecho específico do texto original",
-      "modified_parts": ["parte1", "parte2"] // apenas para questões falsas
+      "explanation": "Explicação técnica detalhada citando o artigo e fundamento",
+      "source_text": "Trecho específico do texto legal que fundamenta a resposta",
+      "modified_parts": [], // para questões verdadeiras 
+      "difficulty": 3
     }
   ]
 }
 
-IMPORTANTE: Responda APENAS com o JSON válido, sem texto adicional.`
+IMPORTANTE: 
+- Responda APENAS com JSON válido, sem texto adicional
+- Mantenha equilíbrio: ${Math.ceil(count/2)} verdadeiras, ${Math.floor(count/2)} falsas
+- Cada questão deve testar conhecimento específico do ${artigo}
+- Use terminologia técnica correta do Direito Penal`
 }
 
 const parseAIResponse = (aiResponse, sectionContent) => {
@@ -108,22 +147,74 @@ const parseAIResponse = (aiResponse, sectionContent) => {
       throw new Error('Invalid response format')
     }
 
-    // Processar e validar questões
-    return parsed.questions.map((q, index) => ({
+    // Processar e validar qualidade das questões
+    const processedQuestions = parsed.questions.map((q, index) => ({
       id: q.id || index + 1,
       question_text: q.question_text || `Questão ${index + 1}`,
       correct_answer: Boolean(q.correct_answer),
       explanation: q.explanation || 'Explicação não disponível',
       source_text: q.source_text || sectionContent.conteudo?.tipificacao || '',
       modified_parts: q.modified_parts || [],
-      difficulty: calculateDifficulty(q.question_text),
+      difficulty: q.difficulty || calculateDifficulty(q.question_text),
       created_by_ai: 'deepseek'
     }))
 
+    // Validar qualidade das questões
+    const validatedQuestions = processedQuestions.filter(q => validateQuestionQuality(q, sectionContent))
+    
+    if (validatedQuestions.length < processedQuestions.length * 0.7) {
+      console.warn('Many questions failed quality validation, falling back to mock')
+      return generateHighQualityMockQuestions(sectionContent, 10)
+    }
+
+    console.log(`${validatedQuestions.length}/${processedQuestions.length} questions passed quality validation`)
+    return validatedQuestions
+
   } catch (error) {
     console.error('Error parsing AI response:', error)
-    return generateMockQuestions(sectionContent, 10)
+    return generateHighQualityMockQuestions(sectionContent, 10)
   }
+}
+
+const validateQuestionQuality = (question, sectionContent) => {
+  const text = question.question_text.toLowerCase()
+  
+  // Critérios de qualidade
+  const qualityCriteria = {
+    // Não deve ser genérica demais
+    notGeneric: !text.includes('este crime está corretamente definido'),
+    
+    // Deve ter tamanho adequado (não muito curta nem muito longa)
+    adequateLength: text.length >= 20 && text.length <= 500,
+    
+    // Deve conter terminologia jurídica específica
+    hasLegalTerminology: /\b(art|artigo|reclusão|detenção|multa|pena|crime|código|penal|falsificar|selo|tribut)\b/i.test(text),
+    
+    // Deve ter explicação substancial
+    hasGoodExplanation: question.explanation.length >= 30,
+    
+    // Não deve repetir exatamente o texto base
+    notExactCopy: question.source_text !== question.question_text,
+    
+    // Deve ter contexto específico da seção
+    hasSpecificContext: sectionContent.artigo ? text.includes(sectionContent.artigo.toLowerCase().replace('art. ', '')) : true
+  }
+
+  const passedCriteria = Object.values(qualityCriteria).filter(Boolean).length
+  const totalCriteria = Object.keys(qualityCriteria).length
+  
+  const qualityScore = passedCriteria / totalCriteria
+  
+  // Log para debug
+  if (qualityScore < 0.7) {
+    console.warn('Question failed quality check:', {
+      question: question.question_text.substring(0, 100),
+      score: qualityScore,
+      criteria: qualityCriteria
+    })
+  }
+  
+  return qualityScore >= 0.7
 }
 
 const calculateDifficulty = (questionText) => {
@@ -173,6 +264,57 @@ const generateMockQuestions = (sectionContent, count) => {
   }
   
   return mockQuestions
+}
+
+const generateHighQualityMockQuestions = (sectionContent, count) => {
+  const questions = []
+  const artigo = sectionContent?.artigo || 'Art. 293'
+  const titulo = sectionContent?.titulo || 'Seção de Direito Penal'
+  const conteudo = sectionContent?.conteudo || {}
+  
+  // Base de templates de alta qualidade baseados no PDF fornecido
+  const templates = {
+    pena: {
+      true: `A pena prevista no ${artigo} é de ${conteudo.pena || 'reclusão, de dois a oito anos, e multa'}.`,
+      false: `A pena prevista no ${artigo} é de detenção, de dois a oito anos, e multa.`,
+      explanation_true: `Correto. De acordo com o ${artigo} do Código Penal, a pena é exatamente ${conteudo.pena || 'reclusão, de dois a oito anos, e multa'}.`,
+      explanation_false: `Falso. A pena correta é ${conteudo.pena || 'reclusão, de dois a oito anos, e multa'}. A modalidade é reclusão, não detenção.`
+    },
+    tipificacao: {
+      true: `O ${artigo} tipifica a conduta de ${conteudo.tipificacao || 'falsificar documentos públicos'}.`,
+      false: `O ${artigo} tipifica exclusivamente a conduta de usar documentos falsificados.`,
+      explanation_true: `Correto. O ${artigo} efetivamente tipifica: ${conteudo.tipificacao || 'a falsificação de documentos públicos'}.`,
+      explanation_false: `Falso. O ${artigo} tipifica ${conteudo.tipificacao || 'falsificar, não apenas usar'}. O uso pode estar em outro dispositivo ou parágrafo.`
+    },
+    elementos: {
+      true: `Para configuração do crime do ${artigo}, é necessário que a conduta seja praticada mediante ${conteudo.tipificacao?.includes('fabricando') ? 'fabricação ou alteração' : 'dolo específico'}.`,
+      false: `O crime do ${artigo} pode ser praticado na modalidade culposa.`,
+      explanation_true: `Correto. O tipo penal exige dolo específico e as modalidades ${conteudo.tipificacao?.includes('fabricando') ? 'de fabricação ou alteração' : 'previstas no caput'}.`,
+      explanation_false: `Falso. Trata-se de crime doloso. Não existe modalidade culposa para este tipo penal.`
+    }
+  }
+  
+  const templateKeys = Object.keys(templates)
+  
+  for (let i = 0; i < count; i++) {
+    const templateType = templateKeys[i % templateKeys.length]
+    const template = templates[templateType]
+    const isTrue = i % 2 === 0
+    
+    questions.push({
+      id: i + 1,
+      question_text: isTrue ? template.true : template.false,
+      correct_answer: isTrue,
+      explanation: isTrue ? template.explanation_true : template.explanation_false,
+      source_text: `${artigo} - ${conteudo.tipificacao || 'Texto legal específico'}`,
+      modified_parts: isTrue ? [] : ['elemento modificado para criar questão falsa'],
+      difficulty: Math.ceil((i % 4) + 1),
+      created_by_ai: 'high_quality_mock'
+    })
+  }
+  
+  console.log(`Generated ${count} high-quality mock questions for ${titulo}`)
+  return questions
 }
 
 // Função para verificar se a API está disponível

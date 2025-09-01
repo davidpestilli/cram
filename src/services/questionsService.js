@@ -92,13 +92,27 @@ export class QuestionsService {
 
   static async loadSectionContentFromFile(sectionId) {
     try {
-      // Mapear section_id para o conteúdo estruturado
-      // Por enquanto, usar dados mock baseados no arquivo direito_penal_estruturado.json
-      const mockContent = this.getMockSectionContent(sectionId)
-      return mockContent
+      // Carregar o arquivo JSON estruturado real
+      const response = await fetch('/direito_penal_estruturado.json')
+      if (!response.ok) {
+        throw new Error('Could not load structured content file')
+      }
+      
+      const structuredContent = await response.json()
+      
+      // Encontrar a seção específica
+      const section = structuredContent.secoes?.find(s => s.id === parseInt(sectionId))
+      
+      if (section) {
+        return section
+      } else {
+        console.warn(`Section ${sectionId} not found in structured content, using mock`)
+        return this.getMockSectionContent(sectionId)
+      }
     } catch (error) {
-      console.error('Error loading section content:', error)
-      return null
+      console.error('Error loading section content from file:', error)
+      console.log('Falling back to mock content')
+      return this.getMockSectionContent(sectionId)
     }
   }
 
