@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { QuestionsService } from '../services/questionsService'
@@ -54,34 +54,34 @@ const StudySession = () => {
   // Achievement states
   const [showAchievementNotification, setShowAchievementNotification] = useState(false)
   const [currentAchievement, setCurrentAchievement] = useState(null)
+  
+  // Proteção robusta contra múltiplas chamadas em React StrictMode
+  const isInitializingRef = useRef(false)
+  const sessionKey = `study-session-${subjectId}-${sectionId}-${questionType}`
+  const hasInitializedRef = useRef(false)
+  
+  // Verificar sessionStorage apenas uma vez na inicialização
+  const [hasInitializedFromStorage] = useState(() => {
+    return sessionStorage.getItem(sessionKey) === 'true'
+  })
+  
+  // Combinar ambas as proteções
+  const shouldInitialize = !hasInitializedRef.current && !hasInitializedFromStorage && !isInitializingRef.current
 
-  useEffect(() => {
-    if (subjectId && sectionId && profile) {
-      initializeStudySession()
+  const initializeStudySession = useCallback(async () => {
+    // Proteção contra múltiplas chamadas
+    if (isInitializingRef.current || hasInitializedRef.current) {
+      console.log('⚠️ Sessão já está sendo inicializada ou já foi inicializada, ignorando chamada duplicada')
+      return
     }
-  }, [subjectId, sectionId, profile])
-
-  // Check for achievement notifications
-  useEffect(() => {
-    const achievement = getNextNotification()
-    if (achievement && !showAchievementNotification) {
-      setCurrentAchievement(achievement)
-      setShowAchievementNotification(true)
-    }
-  }, [getNextNotification, showAchievementNotification])
-
-  const handleAchievementNotificationComplete = () => {
-    setShowAchievementNotification(false)
-    setCurrentAchievement(null)
-    markNotificationShown()
-  }
-
-  const initializeStudySession = async () => {
+    
     try {
+      isInitializingRef.current = true
+      hasInitializedRef.current = true
       setLoading(true)
       setStartTime(Date.now())
 
-      console.log(`Initializing study session for subject ${subjectId}, section ${sectionId}, type: ${questionType}`)
+      console.log(`🚀 Initializing study session for subject ${subjectId}, section ${sectionId}, type: ${questionType}`)
 
       const result = await QuestionsService.getOrCreateQuestions(
         parseInt(subjectId), 
@@ -106,7 +106,40 @@ const StudySession = () => {
       setError('Erro ao carregar questões. Tente novamente.')
     } finally {
       setLoading(false)
+      isInitializingRef.current = false
     }
+  }, [subjectId, sectionId, profile, questionType])
+
+  // Initialize study session when component mounts
+  useEffect(() => {
+    if (subjectId && sectionId && profile && shouldInitialize) {
+      sessionStorage.setItem(sessionKey, 'true')
+      initializeStudySession()
+    }
+  }, [subjectId, sectionId, profile, initializeStudySession, sessionKey, shouldInitialize])
+
+  // Check for achievement notifications
+  useEffect(() => {
+    const achievement = getNextNotification()
+    if (achievement && !showAchievementNotification) {
+      setCurrentAchievement(achievement)
+      setShowAchievementNotification(true)
+    }
+  }, [getNextNotification, showAchievementNotification])
+
+  // Cleanup on unmount for questionType='new' to allow new questions next time
+  useEffect(() => {
+    return () => {
+      if (questionType === 'new') {
+        sessionStorage.removeItem(sessionKey)
+      }
+    }
+  }, [sessionKey, questionType])
+
+  const handleAchievementNotificationComplete = () => {
+    setShowAchievementNotification(false)
+    setCurrentAchievement(null)
+    markNotificationShown()
   }
 
   const handleAnswer = async (answer) => {
@@ -327,7 +360,12 @@ const StudySession = () => {
               title="Erro ao Carregar Questões"
               description={error}
               actionText="Tentar Novamente"
-              onAction={initializeStudySession}
+              onAction={() => {
+                hasInitializedRef.current = false
+                isInitializingRef.current = false
+                sessionStorage.removeItem(sessionKey)
+                initializeStudySession()
+              }}
             />
             <div className="text-center mt-4">
               <Link
@@ -453,6 +491,10 @@ const StudySession = () => {
                   setLastQuestionReward(null)
                   setStartTime(Date.now())
                   setQuestionStartTime(Date.now())
+                  hasInitializedRef.current = false
+                  isInitializingRef.current = false
+                  sessionStorage.removeItem(sessionKey)
+                  initializeStudySession()
                 }}
                 className="btn-secondary"
               >

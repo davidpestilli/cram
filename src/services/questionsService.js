@@ -1,16 +1,13 @@
 import { supabase } from '../lib/supabase'
 import { generateQuestions } from './deepseekApi'
+import direitoPenalEstruturado from '../data/direito_penal_estruturado.json'
+
+console.log('🔄 QuestionsService carregado com import estático:', !!direitoPenalEstruturado)
 
 export class QuestionsService {
   static async getOrCreateQuestions(subjectId, sectionId, options = {}) {
     try {
       const { userId, questionType = 'auto', forceNew = false } = options
-      
-      // Opções de tipo de questão:
-      // 'answered' - questões já respondidas pelo usuário
-      // 'unanswered' - questões existentes não respondidas pelo usuário
-      // 'new' - forçar criação de novas questões
-      // 'auto' - comportamento padrão (tentar reutilizar, criar se necessário)
       
       if (questionType === 'answered' && userId) {
         return await this.getAnsweredQuestions(userId, subjectId, sectionId)
@@ -75,13 +72,12 @@ export class QuestionsService {
         throw sectionError
       }
 
-      // Por enquanto, usar o arquivo JSON estruturado local
-      // Em produção, isso viria do campo content_file ou seria armazenado no banco
-      const sectionContent = await this.loadSectionContentFromFile(sectionId)
+      // Usar o conteúdo estruturado direto do import
+      const fileContent = this.loadSectionContentFromFile(sectionId)
       
       return {
         ...section,
-        conteudo: sectionContent
+        ...fileContent  // Merge directly so titulo, artigo etc. are at root level
       }
 
     } catch (error) {
@@ -90,35 +86,39 @@ export class QuestionsService {
     }
   }
 
-  static async loadSectionContentFromFile(sectionId) {
+  static loadSectionContentFromFile(sectionId) {
     try {
-      // Carregar o arquivo JSON estruturado real
-      const response = await fetch('/direito_penal_estruturado.json')
-      if (!response.ok) {
-        throw new Error('Could not load structured content file')
+      console.log(`📂 [NOVO] Carregando seção ${sectionId} via import direto...`)
+      
+      // USAR DIRETO O IMPORT - SEM ASYNC, SEM FETCH!
+      if (!direitoPenalEstruturado || !direitoPenalEstruturado.secoes) {
+        console.error('❌ Import falhou - dados não disponíveis')
+        return this.getMockSectionContent(sectionId)
       }
       
-      const structuredContent = await response.json()
+      console.log(`✅ Import OK! ${direitoPenalEstruturado.secoes.length} seções carregadas`)
       
       // Encontrar a seção específica
-      const section = structuredContent.secoes?.find(s => s.id === parseInt(sectionId))
+      const section = direitoPenalEstruturado.secoes.find(s => s.id === parseInt(sectionId))
       
       if (section) {
+        console.log(`✅ Seção ${sectionId} encontrada: "${section.titulo}"`)
+        console.log(`📝 Artigo: ${section.artigo}`)
         return section
       } else {
-        console.warn(`Section ${sectionId} not found in structured content, using mock`)
+        console.warn(`⚠️ Seção ${sectionId} não encontrada`)
+        const availableSections = direitoPenalEstruturado.secoes.map(s => `${s.id}: ${s.titulo}`).join(', ')
+        console.log(`📋 Seções disponíveis: ${availableSections}`)
         return this.getMockSectionContent(sectionId)
       }
     } catch (error) {
-      console.error('Error loading section content from file:', error)
-      console.log('Falling back to mock content')
+      console.error('❌ Erro ao carregar seção:', error)
       return this.getMockSectionContent(sectionId)
     }
   }
 
   static getMockSectionContent(sectionId) {
     // Mock data baseado no arquivo direito_penal_estruturado.json
-    // Em produção, isso seria carregado do arquivo ou banco de dados
     const mockSections = {
       1: {
         id: 1,
@@ -142,31 +142,13 @@ export class QuestionsService {
             "Pena mais grave que falsificação de documento particular"
           ]
         }
-      },
-      2: {
-        id: 2,
-        titulo: "Falsificação de Papéis Públicos - Condutas Equiparadas",
-        artigo: "Art. 293, §1º ao §5º",
-        conteudo: {
-          tipificacao: "Condutas equiparadas à falsificação de papéis públicos",
-          condutas: [
-            "usar, guardar, possuir ou deter papéis falsificados",
-            "importar, exportar, adquirir, vender selo falsificado destinado a controle tributário",
-            "utilizar produto com selo falsificado ou sem selo obrigatório"
-          ],
-          pena: "mesma pena do caput (reclusão, de dois a oito anos, e multa)",
-          pontos_chave: [
-            "Criminaliza não apenas a falsificação, mas toda a cadeia de circulação",
-            "Pune mesmo quem recebeu de boa-fé, mas continuou usando após descobrir",
-            "Penas diferenciadas conforme gravidade da conduta"
-          ]
-        }
       }
-      // Adicionar mais seções conforme necessário
     }
 
     return mockSections[sectionId] || {
+      id: parseInt(sectionId),
       titulo: `Seção ${sectionId}`,
+      artigo: "Art. 293",
       conteudo: {
         tipificacao: "Conteúdo da seção não disponível",
         pena: "conforme legislação específica",
@@ -209,9 +191,36 @@ export class QuestionsService {
     }
   }
 
+  static async generateNewQuestions(subjectId, sectionId) {
+    try {
+      // Buscar conteúdo da seção
+      const sectionContent = await this.getSectionContent(sectionId)
+      if (!sectionContent) {
+        throw new Error('Section content not found')
+      }
+
+      // Gerar novas questões com IA
+      console.log(`Generating new questions for section ${sectionId}...`)
+      // Gerar apenas 1 questão por vez para melhor confiabilidade
+      const generatedQuestions = await generateQuestions(sectionContent, 1)
+
+      // Salvar questões no banco
+      const savedQuestions = await this.saveQuestions(generatedQuestions, subjectId, sectionId)
+
+      return {
+        questions: savedQuestions,
+        source: 'generated',
+        created: true
+      }
+    } catch (error) {
+      console.error('Error generating new questions:', error)
+      throw error
+    }
+  }
+
+  // Outros métodos mantidos iguais...
   static async saveUserAnswer(userId, questionId, userAnswer, timeSpent = 0) {
     try {
-      // Buscar a questão para verificar resposta correta
       const { data: question, error: questionError } = await supabase
         .from('questions')
         .select('correct_answer')
@@ -223,8 +232,6 @@ export class QuestionsService {
       }
 
       const isCorrect = userAnswer === question.correct_answer
-
-      // Verificar se já existe uma resposta para esta questão
       const { data: existingAnswer } = await supabase
         .from('user_answers')
         .select('id, attempt_number')
@@ -237,7 +244,6 @@ export class QuestionsService {
         ? existingAnswer[0].attempt_number + 1 
         : 1
 
-      // Inserir nova resposta
       const { data, error } = await supabase
         .from('user_answers')
         .insert({
@@ -268,7 +274,6 @@ export class QuestionsService {
 
   static async updateUserStats(userId, subjectId, sectionId, isCorrect) {
     try {
-      // Buscar stats atuais
       const { data: currentStats } = await supabase
         .from('user_section_stats')
         .select('*')
@@ -283,11 +288,9 @@ export class QuestionsService {
         last_studied: new Date().toISOString()
       }
 
-      // Calcular mastery level (0-1)
       newStats.mastery_level = newStats.questions_correct / newStats.questions_answered
 
       if (currentStats) {
-        // Atualizar stats existentes
         const { error } = await supabase
           .from('user_section_stats')
           .update(newStats)
@@ -295,7 +298,6 @@ export class QuestionsService {
 
         if (error) throw error
       } else {
-        // Criar novas stats
         const { error } = await supabase
           .from('user_section_stats')
           .insert({
@@ -348,32 +350,6 @@ export class QuestionsService {
     }
   }
 
-  static async generateNewQuestions(subjectId, sectionId) {
-    try {
-      // Buscar conteúdo da seção
-      const sectionContent = await this.getSectionContent(sectionId)
-      if (!sectionContent) {
-        throw new Error('Section content not found')
-      }
-
-      // Gerar novas questões com IA
-      console.log(`Generating new questions for section ${sectionId}...`)
-      const generatedQuestions = await generateQuestions(sectionContent, 10)
-
-      // Salvar questões no banco
-      const savedQuestions = await this.saveQuestions(generatedQuestions, subjectId, sectionId)
-
-      return {
-        questions: savedQuestions,
-        source: 'generated',
-        created: true
-      }
-    } catch (error) {
-      console.error('Error generating new questions:', error)
-      throw error
-    }
-  }
-
   static async getAnsweredQuestions(userId, subjectId, sectionId, limit = 10) {
     try {
       const { data, error } = await supabase
@@ -414,7 +390,6 @@ export class QuestionsService {
     try {
       console.log('Getting unanswered questions for:', { userId, subjectId, sectionId })
       
-      // Primeiro buscar todas as questões da seção
       const { data: allQuestions, error: questionsError } = await supabase
         .from('questions')
         .select('*')
@@ -423,7 +398,6 @@ export class QuestionsService {
 
       if (questionsError) throw questionsError
 
-      // Se não há questões, retornar vazio
       if (!allQuestions || allQuestions.length === 0) {
         return {
           questions: [],
@@ -432,19 +406,16 @@ export class QuestionsService {
         }
       }
 
-      // Buscar IDs das questões que o usuário já respondeu
       const { data: answeredQuestions, error: answersError } = await supabase
         .from('user_answers')
         .select('question_id')
         .eq('user_id', userId)
         .in('question_id', allQuestions.map(q => q.id))
 
-      // Se erro ao buscar respostas, assumir que não respondeu nenhuma
       const answeredIds = new Set(
         answersError ? [] : (answeredQuestions?.map(a => a.question_id) || [])
       )
 
-      // Filtrar questões não respondidas
       const unansweredQuestions = allQuestions
         .filter(q => !answeredIds.has(q.id))
         .slice(0, limit)
@@ -469,7 +440,6 @@ export class QuestionsService {
     try {
       console.log('Getting question stats for:', { userId, subjectId, sectionId })
       
-      // Primeiro buscar todas as questões da seção
       const { data: allQuestions, error: questionsError } = await supabase
         .from('questions')
         .select('id')
@@ -486,7 +456,6 @@ export class QuestionsService {
       
       let answered = 0
       if (total > 0 && questionIds.length > 0) {
-        // Buscar respostas do usuário para essas questões
         const { data: userAnswers, error: answersError } = await supabase
           .from('user_answers')
           .select('question_id')
@@ -495,9 +464,7 @@ export class QuestionsService {
 
         if (answersError) {
           console.error('Error fetching user answers:', answersError)
-          // Não falhar por erro de respostas, apenas assumir 0
         } else {
-          // Contar questões únicas respondidas
           const uniqueAnsweredQuestions = new Set(userAnswers?.map(a => a.question_id) || [])
           answered = uniqueAnsweredQuestions.size
         }
@@ -509,7 +476,7 @@ export class QuestionsService {
         total,
         answered,
         unanswered,
-        canGenerateNew: true // sempre pode gerar novas
+        canGenerateNew: true
       }
 
       console.log('Question stats calculated:', stats)
@@ -517,7 +484,6 @@ export class QuestionsService {
 
     } catch (error) {
       console.error('Error getting question stats:', error)
-      // Retornar stats padrão para não quebrar a UI
       return {
         total: 0,
         answered: 0,

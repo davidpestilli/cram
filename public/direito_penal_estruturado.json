@@ -1,0 +1,488 @@
+{
+  "titulo": "Direito Penal - Crimes contra a Fé Pública e Administração Pública",
+  "fonte": "Decreto-Lei nº 2.848/1940 - Código Penal",
+  "secoes": [
+    {
+      "id": 1,
+      "titulo": "Falsificação de Papéis Públicos - Conceitos Básicos",
+      "artigo": "Art. 293",
+      "conteudo": {
+        "tipificacao": "Falsificar, fabricando-os ou alterando-os:",
+        "objetos": [
+          "I – selo destinado a controle tributário, papel selado ou qualquer papel de emissão legal destinado à arrecadação de tributo",
+          "II - papel de crédito público que não seja moeda de curso legal",
+          "III - vale postal",
+          "IV - cautela de penhor, caderneta de depósito de caixa econômica ou de outro estabelecimento mantido por entidade de direito público",
+          "V - talão, recibo, guia, alvará ou qualquer outro documento relativo a arrecadação de rendas públicas ou a depósito ou caução por que o poder público seja responsável",
+          "VI - bilhete, passe ou conhecimento de empresa de transporte administrada pela União, por Estado ou por Município"
+        ],
+        "pena": "reclusão, de dois a oito anos, e multa",
+        "pontos_chave": [
+          "Crime de falsificação documental específico para papéis públicos",
+          "Duas modalidades: fabricação (criar do nada) e alteração (modificar existente)",
+          "Objetos protegidos são específicos e taxativos",
+          "Pena mais grave que falsificação de documento particular"
+        ]
+      }
+    },
+    {
+      "id": 2,
+      "titulo": "Falsificação de Papéis Públicos - Condutas Equiparadas",
+      "artigo": "Art. 293, §1º ao §5º",
+      "conteudo": {
+        "paragrafo_1": {
+          "condutas": [
+            "I – usa, guarda, possui ou detém qualquer dos papéis falsificados",
+            "II – importa, exporta, adquire, vende, troca, cede, empresta, guarda, fornece ou restitui à circulação selo falsificado destinado a controle tributário",
+            "III – importa, exporta, adquire, vende, expõe à venda, mantém em depósito, guarda, troca, cede, empresta, fornece, porta ou utiliza produto com selo falsificado ou sem selo obrigatório"
+          ],
+          "pena": "mesma pena do caput (reclusão, de dois a oito anos, e multa)"
+        },
+        "paragrafo_2": {
+          "conduta": "Suprimir carimbo ou sinal indicativo de inutilização para tornar papéis novamente utilizáveis",
+          "pena": "reclusão, de um a quatro anos, e multa"
+        },
+        "paragrafo_3": {
+          "conduta": "Usar papel alterado conforme §2º",
+          "pena": "mesma pena do §2º"
+        },
+        "paragrafo_4": {
+          "conduta": "Usar ou restituir à circulação papel falsificado, mesmo recebido de boa-fé, após conhecer a falsidade",
+          "pena": "detenção, de seis meses a dois anos, ou multa"
+        },
+        "paragrafo_5": {
+          "definicao": "Equipara-se a atividade comercial qualquer forma de comércio irregular ou clandestino"
+        },
+        "pontos_chave": [
+          "Criminaliza não apenas a falsificação, mas toda a cadeia de circulação",
+          "§4º pune mesmo quem recebeu de boa-fé, mas continuou usando após descobrir",
+          "Penas diferenciadas conforme gravidade da conduta",
+          "Abrange comércio informal e clandestino"
+        ]
+      }
+    },
+    {
+      "id": 3,
+      "titulo": "Petrechos de Falsificação e Funcionário Público",
+      "artigo": "Art. 294-295",
+      "conteudo": {
+        "art_294": {
+          "conduta": "Fabricar, adquirir, fornecer, possuir ou guardar objeto especialmente destinado à falsificação",
+          "pena": "reclusão, de um a três anos, e multa",
+          "natureza": "Crime de perigo abstrato"
+        },
+        "art_295": {
+          "conduta": "Funcionário público que comete qualquer crime do capítulo prevalecendo-se do cargo",
+          "consequencia": "aumenta-se a pena de sexta parte",
+          "natureza": "Causa de aumento de pena"
+        },
+        "pontos_chave": [
+          "Art. 294: pune preparação para falsificação",
+          "Objeto deve ser 'especialmente destinado' à falsificação",
+          "Art. 295: agravante específica para funcionário público",
+          "Agravante se aplica a todos os crimes do Capítulo II"
+        ]
+      }
+    },
+    {
+      "id": 4,
+      "titulo": "Falsificação de Selos e Sinais Públicos",
+      "artigo": "Art. 296",
+      "conteudo": {
+        "tipificacao": "Falsificar, fabricando-os ou alterando-os:",
+        "objetos": [
+          "I - selo público destinado a autenticar atos oficiais da União, de Estado ou de Município",
+          "II - selo ou sinal atribuído por lei a entidade de direito público, ou a autoridade, ou sinal público de tabelião"
+        ],
+        "pena_basica": "reclusão, de dois a seis anos, e multa",
+        "paragrafo_1": {
+          "condutas_equiparadas": [
+            "I - quem faz uso do selo ou sinal falsificado",
+            "II - quem utiliza indevidamente o selo ou sinal verdadeiro em prejuízo de outrem",
+            "III - quem altera, falsifica ou faz uso indevido de marcas, logotipos, siglas de órgãos públicos"
+          ],
+          "pena": "mesmas penas do caput"
+        },
+        "paragrafo_2": {
+          "agravante": "funcionário público prevalecendo-se do cargo",
+          "aumento": "sexta parte"
+        },
+        "pontos_chave": [
+          "Protege autenticidade de selos oficiais",
+          "Pune tanto falsificação quanto uso indevido do verdadeiro",
+          "Inclui símbolos de identificação oficial",
+          "Diferencia-se do Art. 293 pelo objeto (selos vs papéis)"
+        ]
+      }
+    },
+    {
+      "id": 5,
+      "titulo": "Falsificação de Documento Público",
+      "artigo": "Art. 297",
+      "conteudo": {
+        "tipificacao": "Falsificar, no todo ou em parte, documento público, ou alterar documento público verdadeiro",
+        "pena_basica": "reclusão, de dois a seis anos, e multa",
+        "paragrafo_1": {
+          "agravante": "funcionário público prevalecendo-se do cargo",
+          "aumento": "sexta parte"
+        },
+        "paragrafo_2": {
+          "equiparacoes": [
+            "documento emanado de entidade paraestatal",
+            "título ao portador ou transmissível por endosso",
+            "ações de sociedade comercial",
+            "livros mercantis",
+            "testamento particular"
+          ]
+        },
+        "paragrafo_3": {
+          "condutas_previdenciarias": [
+            "I – inserir na folha de pagamento pessoa não segurada",
+            "II – inserir declaração falsa na CTPS ou documento previdenciário",
+            "III – inserir declaração falsa em documento contábil relacionado à previdência"
+          ],
+          "pena": "mesmas penas do caput"
+        },
+        "paragrafo_4": {
+          "conduta": "omitir dados do segurado em documentos previdenciários",
+          "pena": "mesmas penas do caput"
+        },
+        "pontos_chave": [
+          "Crime mais amplo que os anteriores",
+          "Falsificação total ou parcial",
+          "§2º amplia conceito de documento público",
+          "§3º e §4º: condutas específicas previdenciárias"
+        ]
+      }
+    },
+    {
+      "id": 6,
+      "titulo": "Falsificação de Documento Particular e Cartão",
+      "artigo": "Art. 298-299",
+      "conteudo": {
+        "art_298": {
+          "tipificacao": "Falsificar, no todo ou em parte, documento particular ou alterar documento particular verdadeiro",
+          "pena": "reclusão, de um a cinco anos, e multa",
+          "paragrafo_unico": "equipara-se a documento particular o cartão de crédito ou débito"
+        },
+        "art_299_falsidade_ideologica": {
+          "condutas": [
+            "omitir declaração que devia constar",
+            "inserir ou fazer inserir declaração falsa ou diversa"
+          ],
+          "finalidade": "prejudicar direito, criar obrigação ou alterar verdade sobre fato juridicamente relevante",
+          "pena_documento_publico": "reclusão, de um a cinco anos, e multa",
+          "pena_documento_particular": "reclusão de um a três anos, e multa",
+          "paragrafo_unico": {
+            "agravantes": [
+              "funcionário público prevalecendo-se do cargo",
+              "falsificação de assentamento de registro civil"
+            ],
+            "aumento": "sexta parte"
+          }
+        },
+        "pontos_chave": [
+          "Art. 298: falsificação material de documento particular",
+          "Pena menor que documento público",
+          "Cartões equiparados a documento particular",
+          "Art. 299: falsidade ideológica (conteúdo, não forma)",
+          "Exige finalidade específica no Art. 299"
+        ]
+      }
+    },
+    {
+      "id": 7,
+      "titulo": "Outros Crimes Documentais",
+      "artigo": "Art. 300-308",
+      "conteudo": {
+        "art_300_falso_reconhecimento": {
+          "conduta": "reconhecer como verdadeira firma ou letra que não seja",
+          "sujeito": "funcionário público no exercício da função",
+          "pena_doc_publico": "reclusão, de um a cinco anos, e multa",
+          "pena_doc_particular": "reclusão, de um a três anos, e multa"
+        },
+        "art_301_certidao_falsa": {
+          "conduta": "atestar ou certificar falsamente fato que habilite a cargo público ou vantagem",
+          "sujeito": "funcionário público",
+          "pena": "detenção, de dois meses a um ano",
+          "paragrafo_1": {
+            "conduta": "falsificar atestado ou certidão para mesma finalidade",
+            "pena": "detenção, de três meses a dois anos"
+          },
+          "paragrafo_2": "com fim de lucro, aplica-se também multa"
+        },
+        "art_302_atestado_medico": {
+          "conduta": "médico dar atestado falso no exercício da profissão",
+          "pena": "detenção, de um mês a um ano",
+          "paragrafo_unico": "com fim de lucro, aplica-se também multa"
+        },
+        "art_303_selo_filatelico": {
+          "conduta": "reproduzir ou alterar selo filatélico de valor para coleção",
+          "ressalva": "salvo quando anotado visivelmente",
+          "pena": "detenção, de um a três anos, e multa"
+        },
+        "art_304_uso_documento_falso": {
+          "conduta": "usar documento falsificado referido nos arts. 297-302",
+          "pena": "a mesma da falsificação"
+        },
+        "art_305_supressao_documento": {
+          "conduta": "destruir, suprimir ou ocultar documento de que não podia dispor",
+          "pena_doc_publico": "reclusão, de dois a seis anos, e multa",
+          "pena_doc_particular": "reclusão, de um a cinco anos, e multa"
+        },
+        "pontos_chave": [
+          "Crimes específicos por categoria profissional",
+          "Art. 304: uso equipara-se à falsificação",
+          "Diferenciação de penas conforme documento",
+          "Proteção da fé pública em documentos especializados"
+        ]
+      }
+    },
+    {
+      "id": 8,
+      "titulo": "Fraudes em Certames Públicos",
+      "artigo": "Art. 311-A",
+      "conteudo": {
+        "tipificacao": "Utilizar ou divulgar indevidamente conteúdo sigiloso para beneficiar-se ou comprometer credibilidade",
+        "objetos": [
+          "I - concurso público",
+          "II - avaliação ou exame públicos",
+          "III - processo seletivo para ensino superior",
+          "IV - exame ou processo seletivo previstos em lei"
+        ],
+        "pena_basica": "reclusão, de 1 a 4 anos, e multa",
+        "paragrafo_1": {
+          "conduta": "permitir ou facilitar acesso não autorizado",
+          "pena": "mesmas penas"
+        },
+        "paragrafo_2": {
+          "conduta": "se resulta dano à administração pública",
+          "pena": "reclusão, de 2 a 6 anos, e multa"
+        },
+        "paragrafo_3": {
+          "agravante": "funcionário público",
+          "aumento": "1/3"
+        },
+        "pontos_chave": [
+          "Crime relativamente novo (Lei 12.550/2011)",
+          "Protege lisura de certames públicos",
+          "Abrange desde concursos até vestibulares",
+          "Pena agravada se causar dano efetivo"
+        ]
+      }
+    },
+    {
+      "id": 9,
+      "titulo": "Peculato e Crimes Patrimoniais",
+      "artigo": "Art. 312-315",
+      "conteudo": {
+        "art_312_peculato": {
+          "condutas": [
+            "apropriar-se de bem público/particular em razão do cargo",
+            "desviar bem em proveito próprio ou alheio"
+          ],
+          "pena": "reclusão, de dois a doze anos, e multa",
+          "paragrafo_1": "funcionário sem posse que subtrai valendo-se da função",
+          "paragrafo_2_culposo": {
+            "conduta": "concorrer culposamente para crime de outrem",
+            "pena": "detenção, de três meses a um ano"
+          },
+          "paragrafo_3": "reparação antes da sentença extingue punibilidade no peculato culposo"
+        },
+        "art_313_erro_outrem": {
+          "conduta": "apropriar-se de dinheiro recebido por erro de outrem no exercício do cargo",
+          "pena": "reclusão, de um a quatro anos, e multa"
+        },
+        "art_313A_dados_falsos": {
+          "conduta": "inserir dados falsos em sistema informatizado da Administração",
+          "pena": "reclusão, de 2 a 12 anos, e multa"
+        },
+        "art_313B_alteracao_sistema": {
+          "conduta": "modificar sistema de informações sem autorização",
+          "pena": "detenção, de 3 meses a 2 anos, e multa",
+          "paragrafo_unico": "aumento de 1/3 a 1/2 se causar dano"
+        },
+        "art_314_extravio": {
+          "conduta": "extraviar, sonegar ou inutilizar livro ou documento oficial",
+          "pena": "reclusão, de um a quatro anos"
+        },
+        "art_315_verbas": {
+          "conduta": "dar aplicação diversa da legal a verbas públicas",
+          "pena": "detenção, de um a três meses, ou multa"
+        },
+        "pontos_chave": [
+          "Peculato: crime mais grave contra patrimônio público",
+          "Diferenciação entre doloso e culposo",
+          "Arts. 313-A e 313-B: crimes informáticos",
+          "Graduação de penas conforme lesividade"
+        ]
+      }
+    },
+    {
+      "id": 10,
+      "titulo": "Corrupção e Concussão",
+      "artigo": "Art. 316-317, 333",
+      "conteudo": {
+        "art_316_concussao": {
+          "conduta": "exigir vantagem indevida em razão da função",
+          "pena": "reclusão, de 2 a 12 anos, e multa",
+          "paragrafo_1_excesso_exacao": {
+            "conduta": "exigir tributo indevido ou usar meio vexatório",
+            "pena": "reclusão, de 3 a 8 anos, e multa"
+          },
+          "paragrafo_2": {
+            "conduta": "desviar o que recebeu indevidamente",
+            "pena": "reclusão, de dois a doze anos, e multa"
+          }
+        },
+        "art_317_corrupcao_passiva": {
+          "condutas": [
+            "solicitar vantagem indevida",
+            "receber vantagem indevida",
+            "aceitar promessa de vantagem"
+          ],
+          "pena": "reclusão, de 2 a 12 anos, e multa",
+          "paragrafo_1": "aumento de 1/3 se retarda, omite ou pratica ato infringindo dever",
+          "paragrafo_2": {
+            "conduta": "ceder a pedido ou influência sem vantagem",
+            "pena": "detenção, de três meses a um ano, ou multa"
+          }
+        },
+        "art_333_corrupcao_ativa": {
+          "conduta": "oferecer ou prometer vantagem a funcionário público",
+          "pena": "reclusão, de 2 a 12 anos, e multa",
+          "paragrafo_unico": "aumento de 1/3 se funcionário retarda, omite ou infringe dever"
+        },
+        "diferencas": {
+          "concussao": "funcionário EXIGE (mais grave)",
+          "corrupcao_passiva": "funcionário SOLICITA/RECEBE/ACEITA",
+          "corrupcao_ativa": "particular OFERECE/PROMETE"
+        },
+        "pontos_chave": [
+          "Concussão é mais grave que corrupção (exigir vs solicitar)",
+          "Corrupção: crime bilateral (ativa e passiva)",
+          "Penas equiparadas entre corrupção ativa e passiva",
+          "Agravantes quando há efetiva lesão ao serviço"
+        ]
+      }
+    },
+    {
+      "id": 11,
+      "titulo": "Outros Crimes Funcionais",
+      "artigo": "Art. 319-327",
+      "conteudo": {
+        "art_319_prevaricacao": {
+          "condutas": [
+            "retardar ato de ofício para satisfazer interesse pessoal",
+            "deixar de praticar ato de ofício para satisfazer interesse pessoal",
+            "praticar ato contra lei para satisfazer interesse pessoal"
+          ],
+          "pena": "detenção, de três meses a um ano, e multa"
+        },
+        "art_320_condescendencia": {
+          "conduta": "não responsabilizar subordinado que cometeu infração",
+          "pena": "detenção, de quinze dias a um mês, ou multa"
+        },
+        "art_321_advocacia_administrativa": {
+          "conduta": "patrocinar interesse privado valendo-se da função",
+          "pena_interesse_legitimo": "detenção, de um a três meses, ou multa",
+          "pena_interesse_ilegitimo": "detenção, de três meses a um ano, além da multa"
+        },
+        "art_322_violencia_arbitraria": {
+          "conduta": "praticar violência no exercício ou pretexto da função",
+          "pena": "detenção, de seis meses a três anos, além da pena da violência"
+        },
+        "art_323_abandono_funcao": {
+          "conduta": "abandonar cargo fora dos casos legais",
+          "pena_basica": "detenção, de quinze dias a um mês, ou multa",
+          "pena_com_prejuizo": "detenção, de três meses a um ano, e multa",
+          "pena_fronteira": "detenção, de um a três anos, e multa"
+        },
+        "art_325_sigilo_funcional": {
+          "conduta": "revelar fato sigiloso ou facilitar revelação",
+          "pena": "detenção, de seis meses a dois anos, ou multa",
+          "paragrafo_2": {
+            "conduta": "se resulta dano à administração",
+            "pena": "reclusão, de 2 a 6 anos, e multa"
+          }
+        },
+        "art_327_funcionario_publico": {
+          "conceito": "quem exerce cargo, emprego ou função pública, mesmo transitoriamente",
+          "equiparacao": "funcionário de entidade paraestatal e prestadora de serviço",
+          "paragrafo_2": "aumento de 1/3 para ocupantes de cargo em comissão"
+        },
+        "pontos_chave": [
+          "Prevaricação: exige interesse ou sentimento pessoal",
+          "Abandono mais grave em fronteira",
+          "Conceito amplo de funcionário público",
+          "Violação de sigilo: pena maior se causar dano"
+        ]
+      }
+    },
+    {
+      "id": 12,
+      "titulo": "Crimes contra Administração da Justiça",
+      "artigo": "Art. 339-359",
+      "conteudo": {
+        "art_339_denunciacao_caluniosa": {
+          "conduta": "imputar crime/infração que sabe ser falsa",
+          "pena": "reclusão, de dois a oito anos, e multa",
+          "agravante": "anonimato aumenta 1/6",
+          "atenuante": "contravenção diminui 1/2"
+        },
+        "art_342_falso_testemunho": {
+          "condutas": [
+            "afirmar falsamente",
+            "negar a verdade",
+            "calar a verdade"
+          ],
+          "sujeitos": "testemunha, perito, contador, tradutor, intérprete",
+          "pena": "reclusão, de 2 a 4 anos, e multa",
+          "paragrafo_1": "aumento de 1/6 a 1/3 se suborno ou processo envolvendo administração",
+          "paragrafo_2": "deixa de ser punível se retrata-se antes da sentença"
+        },
+        "art_343_corrupcao_testemunha": {
+          "conduta": "dar, oferecer ou prometer vantagem para testemunha mentir",
+          "pena": "reclusão, de três a quatro anos, e multa"
+        },
+        "art_344_coacao_processo": {
+          "conduta": "usar violência contra pessoa que intervém em processo",
+          "pena": "reclusão, de um a quatro anos, e multa, além da pena da violência"
+        },
+        "art_345_justica_proprias_maos": {
+          "conduta": "fazer justiça pelas próprias mãos",
+          "pena": "detenção, de quinze dias a um mês, ou multa",
+          "obs": "sem violência: apenas mediante queixa"
+        },
+        "art_347_fraude_processual": {
+          "conduta": "inovar artificiosamente estado de coisa para induzir erro",
+          "pena_processo_civil": "detenção, de três meses a dois anos, e multa",
+          "pena_processo_penal": "penas em dobro"
+        },
+        "pontos_chave": [
+          "Protegem regular funcionamento da Justiça",
+          "Falso testemunho admite retratação",
+          "Fraude processual mais grave em processo penal",
+          "Graduação conforme lesividade ao processo"
+        ]
+      }
+    }
+  ],
+  "observacoes_gerais": [
+    "Penas de reclusão são mais graves que detenção",
+    "Funcionário público geralmente tem penas agravadas",
+    "Crimes contra administração protegem probidade e eficiência",
+    "Falsificações seguem gradação: documento público > particular",
+    "Muitos crimes admitem modalidade culposa com pena reduzida"
+  ],
+  "dicas_para_questoes": [
+    "Explorar diferenças entre modalidades (fabricar vs alterar)",
+    "Questionar sobre sujeitos ativos (qualquer pessoa vs funcionário)",
+    "Testar conhecimento de penas e suas graduações",
+    "Abordar elementos subjetivos (finalidade, interesse pessoal)",
+    "Contrastar crimes similares (concussão vs corrupção)",
+    "Verificar conhecimento de agravantes e atenuantes",
+    "Testar conceitos jurídicos (documento público vs particular)",
+    "Explorar condutas equiparadas e modalidades derivadas"
+  ]
+}
