@@ -57,19 +57,11 @@ const StudySession = () => {
   
   // Proteção robusta contra múltiplas chamadas em React StrictMode
   const isInitializingRef = useRef(false)
-  const sessionKey = `study-session-${subjectId}-${sectionId}-${questionType}`
   const hasInitializedRef = useRef(false)
-  
-  // Verificar sessionStorage apenas uma vez na inicialização
-  const [hasInitializedFromStorage] = useState(() => {
-    return sessionStorage.getItem(sessionKey) === 'true'
-  })
-  
-  // Combinar ambas as proteções
-  const shouldInitialize = !hasInitializedRef.current && !hasInitializedFromStorage && !isInitializingRef.current
+  const sessionKey = `study-session-${subjectId}-${sectionId}-${questionType}`
 
   const initializeStudySession = useCallback(async () => {
-    // Proteção contra múltiplas chamadas
+    // Proteção contra múltiplas chamadas - SIMPLIFICADA
     if (isInitializingRef.current || hasInitializedRef.current) {
       console.log('⚠️ Sessão já está sendo inicializada ou já foi inicializada, ignorando chamada duplicada')
       return
@@ -77,64 +69,61 @@ const StudySession = () => {
     
     try {
       isInitializingRef.current = true
-      hasInitializedRef.current = true
       setLoading(true)
       setStartTime(Date.now())
 
-      console.log(`🚀 Initializing study session for subject ${subjectId}, section ${sectionId}, type: ${questionType}`)
+      console.log(`🚀 Initializing ${questionType} study session...`)
 
       const result = await QuestionsService.getOrCreateQuestions(
         parseInt(subjectId), 
         parseInt(sectionId),
         {
-          userId: profile.id,
+          userId: profile?.id,
           questionType: questionType
         }
       )
 
+      console.log(`✅ Loaded ${result.questions?.length || 0} ${result.source} questions`)
+
       setQuestions(result.questions)
       setQuestionStartTime(Date.now())
-
-      if (result.created) {
-        console.log('New questions generated')
-      } else {
-        console.log(`Using ${result.source} questions`)
-      }
+      
+      // Marcar como inicializado com sucesso
+      hasInitializedRef.current = true
 
     } catch (err) {
-      console.error('Error initializing study session:', err)
+      console.error('❌ Error initializing study session:', err)
       setError('Erro ao carregar questões. Tente novamente.')
     } finally {
       setLoading(false)
       isInitializingRef.current = false
     }
-  }, [subjectId, sectionId, profile, questionType])
+  }, [subjectId, sectionId, profile?.id, questionType])
 
   // Initialize study session when component mounts
   useEffect(() => {
-    if (subjectId && sectionId && profile && shouldInitialize) {
-      sessionStorage.setItem(sessionKey, 'true')
+    if (subjectId && sectionId && profile?.id && !hasInitializedRef.current && !isInitializingRef.current) {
+      console.log(`🎬 Starting initialization for ${questionType} questions...`)
       initializeStudySession()
     }
-  }, [subjectId, sectionId, profile, initializeStudySession, sessionKey, shouldInitialize])
+  }, [subjectId, sectionId, profile?.id, questionType])
 
-  // Check for achievement notifications
-  useEffect(() => {
-    const achievement = getNextNotification()
-    if (achievement && !showAchievementNotification) {
-      setCurrentAchievement(achievement)
-      setShowAchievementNotification(true)
-    }
-  }, [getNextNotification, showAchievementNotification])
+  // Check for achievement notifications - DESABILITADO TEMPORARIAMENTE
+  // useEffect(() => {
+  //   const achievement = getNextNotification()
+  //   if (achievement && !showAchievementNotification) {
+  //     setCurrentAchievement(achievement)
+  //     setShowAchievementNotification(true)
+  //   }
+  // }, [getNextNotification, showAchievementNotification])
 
-  // Cleanup on unmount for questionType='new' to allow new questions next time
+  // Cleanup on unmount to allow reinitializing next time
   useEffect(() => {
     return () => {
-      if (questionType === 'new') {
-        sessionStorage.removeItem(sessionKey)
-      }
+      hasInitializedRef.current = false
+      isInitializingRef.current = false
     }
-  }, [sessionKey, questionType])
+  }, [])
 
   const handleAchievementNotificationComplete = () => {
     setShowAchievementNotification(false)

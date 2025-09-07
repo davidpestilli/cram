@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { QuestionsService } from '../services/questionsService'
@@ -16,13 +16,7 @@ const QuestionSelection = () => {
   const [questionStats, setQuestionStats] = useState(null)
   const [error, setError] = useState('')
 
-  useEffect(() => {
-    if (subjectId && sectionId && profile) {
-      loadQuestionStats()
-    }
-  }, [subjectId, sectionId, profile])
-
-  const loadQuestionStats = async () => {
+  const loadQuestionStats = useCallback(async () => {
     try {
       setLoading(true)
       const stats = await QuestionsService.getQuestionStats(
@@ -37,7 +31,13 @@ const QuestionSelection = () => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [subjectId, sectionId, profile?.id])
+
+  useEffect(() => {
+    if (subjectId && sectionId && profile?.id) {
+      loadQuestionStats()
+    }
+  }, [subjectId, sectionId, profile?.id, loadQuestionStats])
 
   const handleQuestionTypeSelect = (questionType) => {
     navigate(`/subjects/${subjectId}/sections/${sectionId}/study`, {

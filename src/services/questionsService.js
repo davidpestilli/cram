@@ -1,5 +1,7 @@
 import { supabase } from '../lib/supabase'
 import { generateQuestions } from './deepseekApi'
+import { generateQuestionsProgressively } from './directAIService'
+import questionDeduplicationService from './questionDeduplicationService'
 import direitoPenalEstruturado from '../data/direito_penal_estruturado.json'
 
 console.log('🔄 QuestionsService carregado com import estático:', !!direitoPenalEstruturado)
@@ -157,10 +159,22 @@ export class QuestionsService {
     }
   }
 
-  static async saveQuestions(questions, subjectId, sectionId) {
+  static async saveQuestions(questions, subjectId, sectionId, sectionContent = {}) {
     try {
-      // Preparar dados para inserção
-      const questionsToInsert = questions.map(q => ({
+      console.log(`💾 Salvando ${questions.length} questões com sistema anti-repetição...`)
+      
+      // Processar questões com sistema anti-repetição
+      const deduplicationResult = await questionDeduplicationService.processQuestionsWithAntiRepetition(
+        questions,
+        subjectId,
+        sectionId,
+        sectionContent
+      )
+
+      const processedQuestions = deduplicationResult.questions
+      
+      // Preparar dados para inserção com campos de embedding
+      const questionsToInsert = processedQuestions.map(q => ({
         subject_id: subjectId,
         section_id: sectionId,
         question_text: q.question_text,
@@ -169,7 +183,11 @@ export class QuestionsService {
         difficulty: q.difficulty || 3,
         source_text: q.source_text,
         modified_parts: q.modified_parts || [],
-        created_by_ai: q.created_by_ai || 'deepseek'
+        created_by_ai: q.created_by_ai || 'deepseek',
+        // Novos campos de embeddings
+        embedding: q.embedding || null,
+        semantic_hash: q.semantic_hash || null,
+        content_categories: q.content_categories || []
       }))
 
       // Inserir no banco
@@ -182,39 +200,81 @@ export class QuestionsService {
         throw error
       }
 
-      console.log(`Saved ${data.length} questions to database`)
-      return data
+      console.log(`✅ Salvas ${data.length} questões no banco com embeddings`)
+      console.log(`📊 Estatísticas anti-repetição:`, deduplicationResult.stats)
+      
+      return {
+        questions: data,
+        deduplicationStats: deduplicationResult.stats
+      }
 
     } catch (error) {
-      console.error('Error saving questions:', error)
+      console.error('❌ Erro ao salvar questões:', error)
       throw error
     }
   }
 
-  static async generateNewQuestions(subjectId, sectionId) {
+  static async generateNewQuestions(subjectId, sectionId, options = {}) {
     try {
+      const { count = 5, onProgress = null } = options
+      
       // Buscar conteúdo da seção
       const sectionContent = await this.getSectionContent(sectionId)
       if (!sectionContent) {
         throw new Error('Section content not found')
       }
 
-      // Gerar novas questões com IA
-      console.log(`Generating new questions for section ${sectionId}...`)
-      // Gerar apenas 1 questão por vez para melhor confiabilidade
-      const generatedQuestions = await generateQuestions(sectionContent, 1)
+      console.log(`🚀 Gerando ${count} novas questões para seção ${sectionId} com sistema 3F+2V...`)
+      
+      // Gerar questões com sistema progressivo (3F+2V)
+      const generationResult = await generateQuestionsProgressively(sectionContent, count, onProgress)
+      
+      if (generationResult.questions.length === 0) {
+        throw new Error('Nenhuma questão pôde ser gerada')
+      }
 
-      // Salvar questões no banco
-      const savedQuestions = await this.saveQuestions(generatedQuestions, subjectId, sectionId)
+      console.log(`📝 Geradas ${generationResult.questions.length}/${count} questões`)
+      
+      // Salvar questões no banco com sistema anti-repetição
+      const saveResult = await this.saveQuestions(
+        generationResult.questions, 
+        subjectId, 
+        sectionId, 
+        sectionContent
+      )
 
       return {
-        questions: savedQuestions,
-        source: 'generated',
-        created: true
+        questions: saveResult.questions || saveResult, // Compatibilidade com formato antigo
+        source: 'generated_progressive',
+        created: true,
+        generationStats: {
+          requested: count,
+          generated: generationResult.questions.length,
+          errors: generationResult.errors,
+          successRate: (generationResult.questions.length / count * 100).toFixed(1) + '%'
+        },
+        deduplicationStats: saveResult.deduplicationStats,
+        distribution: this.analyzeDistribution(saveResult.questions || saveResult)
       }
     } catch (error) {
-      console.error('Error generating new questions:', error)
+      console.error('❌ Erro ao gerar novas questões:', error)
       throw error
+    }
+  }
+
+  // Método auxiliar para analisar distribuição 3F+2V
+  static analyzeDistribution(questions) {
+    if (!Array.isArray(questions)) return { error: 'Invalid questions array' }
+    
+    const trueCount = questions.filter(q => q.correct_answer === true).length
+    const falseCount = questions.filter(q => q.correct_answer === false).length
+    
+    return {
+      total: questions.length,
+      true_answers: trueCount,
+      false_answers: falseCount,
+      expected_distribution: '3F+2V',
+      matches_expected: falseCount === 3 && trueCount === 2
     }
   }
 
@@ -352,27 +412,48 @@ export class QuestionsService {
 
   static async getAnsweredQuestions(userId, subjectId, sectionId, limit = 10) {
     try {
-      const { data, error } = await supabase
-        .from('questions')
-        .select(`
-          *,
-          user_answers!inner(
-            user_answer,
-            is_correct,
-            answered_at
-          )
-        `)
-        .eq('subject_id', subjectId)
-        .eq('section_id', sectionId)
-        .eq('user_answers.user_id', userId)
-        .order('user_answers.answered_at', { ascending: false })
+      // Primeiro buscar as respostas do usuário ordenadas
+      const { data: userAnswers, error: answersError } = await supabase
+        .from('user_answers')
+        .select('question_id, user_answer, is_correct, answered_at')
+        .eq('user_id', userId)
+        .order('answered_at', { ascending: false })
         .limit(limit)
 
-      if (error) throw error
+      if (answersError) throw answersError
 
-      console.log(`Found ${data.length} answered questions for user`)
+      if (!userAnswers || userAnswers.length === 0) {
+        return {
+          questions: [],
+          source: 'answered',
+          created: false
+        }
+      }
+
+      const questionIds = userAnswers.map(ua => ua.question_id)
+
+      // Buscar as questões correspondentes
+      const { data: questions, error: questionsError } = await supabase
+        .from('questions')
+        .select('*')
+        .eq('subject_id', subjectId)
+        .eq('section_id', sectionId)
+        .in('id', questionIds)
+
+      if (questionsError) throw questionsError
+
+      // Combinar questões com respostas do usuário na ordem correta
+      const answeredQuestions = userAnswers.map(userAnswer => {
+        const question = questions.find(q => q.id === userAnswer.question_id)
+        return {
+          ...question,
+          user_answers: [userAnswer]
+        }
+      }).filter(q => q.id) // Remove questões não encontradas
+
+      console.log(`Found ${answeredQuestions.length} answered questions for user`)
       return {
-        questions: data || [],
+        questions: answeredQuestions,
         source: 'answered',
         created: false
       }
@@ -388,8 +469,6 @@ export class QuestionsService {
 
   static async getUnansweredQuestions(userId, subjectId, sectionId, limit = 10) {
     try {
-      console.log('Getting unanswered questions for:', { userId, subjectId, sectionId })
-      
       const { data: allQuestions, error: questionsError } = await supabase
         .from('questions')
         .select('*')
