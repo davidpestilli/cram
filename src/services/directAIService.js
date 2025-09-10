@@ -1,4 +1,6 @@
 import axios from 'axios'
+import semanticAnalysisService from './semanticAnalysisService'
+import embeddingsService from './embeddingsService'
 
 const DEEPSEEK_API_URL = 'https://api.deepseek.com/v1/chat/completions'
 const API_KEY = import.meta.env.VITE_DEEPSEEK_API_KEY
@@ -22,15 +24,33 @@ const generateSingleQuestion = async (sectionContent, questionNumber) => {
     messages: [
       {
         role: "system",
-        content: `Você é um especialista em Direito Penal brasileiro. 
-Crie UMA questão educativa verdadeiro/falso com resposta ${questionConfig.expected ? 'VERDADEIRA' : 'FALSA'}.
-IMPORTANTE: A resposta correct_answer DEVE SER ${questionConfig.expected ? 'true' : 'false'}.
-RESPONDA APENAS COM JSON VÁLIDO:
+        content: `Você é um especialista em Direito Penal brasileiro que cria questões educativas.
+
+TIPOS DE QUESTÕES:
+1. TEÓRICAS: Falam diretamente sobre a lei ("A pena do Art. 293 é...", "O crime se consuma quando...")
+2. PRÁTICAS: Contam histórias com pessoas reais ("João falsificou seu diploma...", "Maria alterou sua certidão...")
+
+🎯 QUESTÃO ATUAL: ${questionConfig.type?.toUpperCase() || 'NÃO ESPECIFICADO'}
+
+${questionConfig.type === 'pratica' ? 
+`🔴 ATENÇÃO - QUESTÃO PRÁTICA:
+CRIE UMA HISTÓRIA com pessoa, ação e documento/objeto.
+EXEMPLO: "Carlos alterou sua carteira de habitação para mudar a categoria sem fazer o exame. Cometeu falsificação de documento público."
+NÃO faça questão teórica!` : 
+`🔵 QUESTÃO TEÓRICA:
+Fale diretamente sobre a lei, penas, conceitos juridicos.
+EXEMPLO: "A pena para falsificação de documento público é reclusão de 2 a 6 anos."`
+}
+
+Resposta OBRIGATÓRIA: ${questionConfig.expected ? 'VERDADEIRA' : 'FALSA'}
+correct_answer DEVE SER: ${questionConfig.expected ? 'true' : 'false'}
+
+RESPONDA APENAS JSON:
 {
   "id": ${questionNumber},
   "question_text": "sua questão aqui",
   "correct_answer": ${questionConfig.expected},
-  "explanation": "sua explicação aqui",
+  "explanation": "explicação",
   "source_text": "trecho da lei",
   "modified_parts": [],
   "difficulty": 3,
@@ -62,23 +82,71 @@ RESPONDA APENAS COM JSON VÁLIDO:
   return question
 }
 
-// Função para gerar questões progressivamente
-export const generateQuestionsProgressively = async (sectionContent, count = 5, onProgress = null) => {
-  console.log(`🚀 [PROGRESSIVO] Gerando ${count} questões para: ${sectionContent?.titulo || 'N/A'}`)
+// Função para gerar questões progressivamente com análise semântica
+export const generateQuestionsProgressively = async (sectionContent, count = 5, onProgress = null, subjectId = 1, sectionId = 1) => {
+  console.log(`🚀 [PROGRESSIVO INTELIGENTE] Gerando ${count} questões para: ${sectionContent?.titulo || 'N/A'}`)
   
   if (!API_KEY) {
     throw new Error('❌ API Key não configurada. Configure VITE_DEEPSEEK_API_KEY no arquivo .env')
   }
 
+  // Análise semântica prévia
+  console.log('🧠 Realizando análise semântica do espaço existente...')
+  const semanticAnalysis = await semanticAnalysisService.analyzeExistingQuestions(subjectId, sectionId)
+  
+  console.log(`📊 Análise concluída:`, {
+    questionsExistentes: semanticAnalysis.totalQuestions,
+    clusters: semanticAnalysis.clusters.length,
+    areasSuper: semanticAnalysis.overexploredAreas.length,
+    sugestoes: semanticAnalysis.suggestions.length
+  })
+
   const questions = []
   const errors = []
+  const generatedEmbeddings = [] // Para verificação em tempo real
 
-  // Gerar questões uma por vez
+  // Gerar questões uma por vez com orientação inteligente
   for (let i = 1; i <= count; i++) {
     try {
-      console.log(`📝 Gerando questão ${i}/${count}...`)
+      console.log(`📝 Gerando questão ${i}/${count} com orientação semântica...`)
       
-      const question = await generateSingleQuestion(sectionContent, i)
+      const question = await generateSingleQuestionIntelligent(
+        sectionContent, 
+        i, 
+        semanticAnalysis, 
+        generatedEmbeddings
+      )
+      
+      // Verificação em tempo real
+      if (embeddingsService.isEnabled()) {
+        let quickEmbedding = await embeddingsService.generateEmbedding(question.question_text)
+        if (quickEmbedding) {
+          const similarity = await checkRealTimeSimilarity(quickEmbedding, generatedEmbeddings, semanticAnalysis)
+          
+          if (similarity > 0.9) {
+            console.log(`⚠️ Questão ${i} muito similar (${similarity.toFixed(3)}), regenerando...`)
+            try {
+              // Tentar regenerar com mais diversificação (apenas 1 tentativa)
+              const diversifiedQuestion = await regenerateWithDiversification(
+                sectionContent, 
+                i, 
+                semanticAnalysis,
+                question
+              )
+              // Substituir a questão inteira
+              Object.assign(question, diversifiedQuestion)
+              quickEmbedding = await embeddingsService.generateEmbedding(question.question_text)
+              console.log(`✅ Questão ${i} regenerada com sucesso`)
+            } catch (error) {
+              console.log(`⚠️ Falha ao regenerar questão ${i}, usando original:`, error.message)
+              // Usar questão original se regeneração falhar
+            }
+          }
+          
+          generatedEmbeddings.push(quickEmbedding)
+        }
+      }
+      
       questions.push(question)
       
       console.log(`✅ Questão ${i} gerada com sucesso`)
@@ -89,7 +157,8 @@ export const generateQuestionsProgressively = async (sectionContent, count = 5, 
           current: i,
           total: count,
           question: question,
-          questions: [...questions]
+          questions: [...questions],
+          semanticAnalysis: i === 1 ? semanticAnalysis : undefined
         })
       }
       
@@ -150,24 +219,60 @@ const createSingleQuestionPrompt = (sectionContent, questionNumber, questionConf
   const conteudo = sectionContent.conteudo || {}
   
   const expectedAnswer = questionConfig.expected ? 'VERDADEIRA' : 'FALSA'
+  const isTheoreticalQuestion = questionConfig.type === 'teorica'
+  
   const answerInstructions = questionConfig.expected 
-    ? 'Crie uma afirmação CORRETA sobre o conteúdo legal.'
-    : 'Crie uma afirmação INCORRETA, introduzindo um erro sutil mas claro (valor errado, modalidade incorreta, etc.).'
+    ? (isTheoreticalQuestion 
+        ? 'Crie uma afirmação CORRETA sobre o conteúdo legal direto (definições, penas, elementos).'
+        : 'Crie um CASO PRÁTICO CORRETO onde a situação se enquadra perfeitamente no crime.')
+    : (isTheoreticalQuestion
+        ? 'Crie uma afirmação INCORRETA sobre o conteúdo legal, introduzindo erro sutil mas claro.'
+        : 'Crie um CASO PRÁTICO INCORRETO onde a situação NÃO caracteriza o crime ou se confunde com outro.')
+  
+  // Formatar conteúdo completo
+  const fullLegalContent = formatCompleteLegalContent(conteudo)
   
   return `Crie UMA questão verdadeiro/falso sobre ${artigo} - ${titulo}.
 RESPOSTA OBRIGATÓRIA: ${expectedAnswer}
 
-CONTEÚDO LEGAL:
-${conteudo.tipificacao || 'Não especificado'}
-Pena: ${conteudo.pena || 'Não especificado'}
+CONTEÚDO LEGAL COMPLETO:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${fullLegalContent}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-QUESTÃO #${questionNumber} - ${questionConfig.focus}
+QUESTÃO #${questionNumber} - TIPO: ${questionConfig.type.toUpperCase()}
+${questionConfig.focus}
 ${answerInstructions}
 
-INSTRUÇÕES:
-- Se a resposta deve ser FALSA, introduza um erro específico (ex: pena errada, modalidade incorreta, objeto não protegido)
-- Se a resposta deve ser VERDADEIRA, use informações exatas da lei
-- Na explicação, sempre explique por que a resposta é ${expectedAnswer}
+${isTheoreticalQuestion 
+  ? `INSTRUÇÕES PARA QUESTÕES TEÓRICAS:
+- Foque no TEXTO DA LEI: definições, penas, elementos, tipificação
+- EXPLORE OS INCISOS: Use diferentes incisos (I, II, III, IV, V, VI) para questões específicas
+- SEJA PRECISO: Cite valores exatos de penas, modalidades corretas (reclusão/detenção)
+- Se FALSA: Introduza erros específicos (pena errada, modalidade incorreta, inciso trocado)
+- Se VERDADEIRA: Use informações exatas dos artigos e incisos`
+  : `INSTRUÇÕES PARA QUESTÕES PRÁTICAS - OBRIGATÓRIO SEGUIR:
+
+🎨 FORMATO OBRIGATÓRIO: "[Nome da pessoa] [ação concreta] [objeto/documento] [finalidade/contexto]"
+
+✅ EXEMPLOS DE QUESTÕES PRÁTICAS CORRETAS:
+- "Maria alterou os dados de sua certidão de nascimento para parecer mais jovem em um concurso público. Cometeu o crime do Art. X."
+- "João criou um diploma universitário falso da USP para conseguir um emprego melhor. Praticou falsificação de documento público."
+- "Ana rasgou a carteira de motorista do ex-marido durante uma discussão. Cometeu o crime de falsificação."
+- "Pedro imitou a assinatura do pai em um cheque para sacar dinheiro. Caracteriza falsificação de documento."
+
+🚫 PROIBIDO em questões práticas:
+- Citar artigos diretamente ("O Art. 293 prevê...")
+- Explicar conceitos ("A falsificação consiste em...")
+- Usar termos técnicos sem contexto prático
+- Questões abstratas ou genéricas
+
+🎯 ELEMENTOS OBRIGATÓRIOS:
+- Nome de pessoa (João, Maria, Carlos, Ana, etc.)
+- Ação concreta (alterou, criou, falsificou, imitou, destruiu)
+- Documento/objeto específico (RG, diploma, certidão, carteira)
+- Motivação/contexto (para conseguir emprego, enganar autoridade, obter vantagem)`
+}
 
 RESPONDA APENAS JSON VÁLIDO:
 {
@@ -183,32 +288,38 @@ RESPONDA APENAS JSON VÁLIDO:
 }
 
 // Distribuição 3F+2V: questões 1, 3, 5 = false | questões 2, 4 = true
+// Distribuição por tipo: questões 1, 2 = teóricas | questões 3, 4, 5 = práticas
 const getQuestionConfig = (questionNumber) => {
   const configs = [
     { 
       id: 1, 
-      expected: false, 
-      focus: "Foque na PENA - introduza erro na modalidade ou valor (ex: detenção em vez de reclusão)" 
+      expected: false,
+      type: "teorica",
+      focus: "QUESTÃO TEÓRICA: Foque na PENA - introduza erro na modalidade ou valor (ex: detenção em vez de reclusão, valores incorretos)" 
     },
     { 
       id: 2, 
-      expected: true, 
-      focus: "Foque na TIPIFICAÇÃO - use condutas corretas da lei (falsificar, fabricar, alterar)" 
+      expected: true,
+      type: "teorica",
+      focus: "QUESTÃO TEÓRICA: Foque na TIPIFICAÇÃO - use definições e condutas corretas da lei (falsificar, fabricar, alterar)" 
     }, 
     { 
       id: 3, 
-      expected: false, 
-      focus: "Foque nos OBJETOS - mencione documento NÃO protegido ou descrição incorreta" 
+      expected: false,
+      type: "pratica",
+      focus: "QUESTÃO PRÁTICA FALSA: Crie uma história com pessoas reais onde a situação NÃO é crime (ex: João rasgou seu próprio certificado, Maria perdeu carteira de identidade)" 
     },
     { 
       id: 4, 
-      expected: true, 
-      focus: "Foque no SUJEITO - definição correta de quem pode cometer o crime" 
+      expected: true,
+      type: "pratica", 
+      focus: "QUESTÃO PRÁTICA VERDADEIRA: Crie uma história com pessoas reais onde claramente OCORREU o crime (ex: Carlos falsificou diploma para conseguir emprego)" 
     },
     { 
       id: 5, 
-      expected: false, 
-      focus: "Foque na CONSUMAÇÃO - momento errado ou circunstância incorreta" 
+      expected: false,
+      type: "pratica",
+      focus: "QUESTÃO PRÁTICA FALSA: Crie uma história que PARECE ser crime mas NÃO é (ex: Ana imitou assinatura da irmã com autorização, documento privado vs público)" 
     }
   ]
   return configs[questionNumber - 1] || configs[0]
@@ -480,6 +591,253 @@ const fixMalformedJSON = (jsonStr) => {
     console.warn('⚠️ Erro ao corrigir JSON:', error)
     return jsonStr
   }
+}
+
+// Funções auxiliares para geração inteligente
+
+async function generateSingleQuestionIntelligent(sectionContent, questionNumber, semanticAnalysis, generatedEmbeddings) {
+  // Criar prompt com orientação semântica
+  const guidedPrompt = await semanticAnalysisService.generateGuidedPrompt(
+    '',
+    sectionContent,
+    semanticAnalysis
+  )
+
+  // Usar a função original com prompt guiado
+  const questionConfig = getQuestionConfig(questionNumber)
+  const prompt = createIntelligentQuestionPrompt(sectionContent, questionNumber, questionConfig, guidedPrompt)
+  
+  return await generateSingleQuestionWithPrompt(sectionContent, questionNumber, prompt)
+}
+
+function createIntelligentQuestionPrompt(sectionContent, questionNumber, questionConfig, guidancePrompt) {
+  const artigo = sectionContent.artigo || 'Artigo não especificado'
+  const titulo = sectionContent.titulo || 'Seção sem título'
+  const conteudo = sectionContent.conteudo || {}
+  
+  const expectedAnswer = questionConfig.expected ? 'VERDADEIRA' : 'FALSA'
+  const answerInstructions = questionConfig.expected 
+    ? 'Crie uma afirmação CORRETA sobre o conteúdo legal.'
+    : 'Crie uma afirmação INCORRETA, introduzindo um erro sutil mas claro.'
+
+  // Usar conteúdo completo formatado
+  const fullLegalContent = formatCompleteLegalContent(conteudo)
+
+  return `${guidancePrompt}
+
+CONTEXTO LEGAL COMPLETO:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${artigo} - ${titulo}
+
+${fullLegalContent}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+QUESTÃO #${questionNumber} - RESPOSTA: ${expectedAnswer}
+${answerInstructions}
+
+INSTRUÇÕES PARA GERAR QUESTÕES VARIADAS E ORIGINAIS:
+- EXPLORE OS INCISOS: Use diferentes incisos (I, II, III, IV, V, VI) para criar questões específicas
+- VARIE OS ASPECTOS: Foque em tipificação, objetos protegidos, penas, sujeitos, consumação, tentativa
+- Se FALSA: Introduza erros específicos (pena errada, modalidade incorreta, objeto não protegido, inciso trocado)
+- Se VERDADEIRA: Use informações exatas de incisos específicos, penas corretas, elementos precisos
+- SEJA ESPECÍFICO: Mencione documentos concretos dos incisos (ex: "vale postal", "cautela de penhor", "bilhete de transporte público")
+- EVITE GENERALIDADES: Não use apenas "papéis públicos" - cite documentos específicos dos incisos
+- SEJA CRIATIVO E ORIGINAL! Evite repetir padrões das questões existentes
+
+RESPONDA APENAS JSON VÁLIDO:
+{
+  "id": ${questionNumber},
+  "question_text": "...",
+  "correct_answer": ${questionConfig.expected},
+  "explanation": "...",
+  "difficulty": 3,
+  "source_text": "${artigo}",
+  "modified_parts": ["descrição das modificações se falsa"]
+}`
+}
+
+async function regenerateWithDiversification(sectionContent, questionNumber, semanticAnalysis, originalQuestion) {
+  const diversificationPrompt = `
+IMPORTANTE: A questão anterior era muito similar a questões existentes:
+"${originalQuestion.question_text}"
+
+CRIE uma questão COMPLETAMENTE DIFERENTE sobre o mesmo tópico jurídico.
+${semanticAnalysis.suggestions.map(s => `• ${s}`).join('\n')}
+
+Seja CRIATIVO e aborde aspectos ÚNICOS do tema.
+`
+  
+  const questionConfig = getQuestionConfig(questionNumber)
+  const prompt = createIntelligentQuestionPrompt(sectionContent, questionNumber, questionConfig, diversificationPrompt)
+  
+  return await generateSingleQuestionWithPrompt(sectionContent, questionNumber, prompt)
+}
+
+async function checkRealTimeSimilarity(questionEmbedding, generatedEmbeddings, semanticAnalysis) {
+  let maxSimilarity = 0
+
+  // Comparar com questões já geradas nesta sessão
+  for (const embedding of generatedEmbeddings) {
+    const similarity = embeddingsService.calculateSimilarity(questionEmbedding, embedding)
+    maxSimilarity = Math.max(maxSimilarity, similarity)
+  }
+
+  // Comparar com clusters existentes (amostragem)
+  for (const cluster of semanticAnalysis.clusters.slice(0, 3)) {
+    if (cluster.centroid?.embedding) {
+      const similarity = embeddingsService.calculateSimilarity(
+        questionEmbedding, 
+        cluster.centroid.embedding
+      )
+      maxSimilarity = Math.max(maxSimilarity, similarity)
+    }
+  }
+
+  return maxSimilarity
+}
+
+async function generateSingleQuestionWithPrompt(sectionContent, questionNumber, customPrompt) {
+  try {
+    const response = await deepseekClient.post('', {
+      model: 'deepseek-chat',
+      messages: [
+        {
+          role: 'system',
+          content: 'Você é um especialista em Direito Penal brasileiro. Crie questões precisas e educativas.'
+        },
+        {
+          role: 'user',
+          content: customPrompt
+        }
+      ],
+      max_tokens: 800,
+      temperature: 0.8, // Maior criatividade
+      response_format: { type: 'json_object' }
+    })
+
+    if (!response.data?.choices?.[0]?.message?.content) {
+      throw new Error('Resposta vazia da API')
+    }
+
+    const content = response.data.choices[0].message.content
+    const parsed = JSON.parse(content)
+    
+    return {
+      id: questionNumber,
+      question_text: parsed.question_text,
+      correct_answer: Boolean(parsed.correct_answer),
+      explanation: parsed.explanation,
+      difficulty: parsed.difficulty || 3,
+      source_text: parsed.source_text || sectionContent.artigo,
+      modified_parts: parsed.modified_parts || []
+    }
+
+  } catch (error) {
+    console.error(`❌ Erro ao gerar questão inteligente ${questionNumber}:`, error)
+    // Fallback para método original
+    return await generateSingleQuestion(sectionContent, questionNumber)
+  }
+}
+
+// Função auxiliar para formatar conteúdo legal completo
+function formatCompleteLegalContent(conteudo) {
+  if (!conteudo) return 'Conteúdo não disponível'
+  
+  let formattedContent = ''
+  
+  // Tipificação
+  if (conteudo.tipificacao) {
+    formattedContent += `📋 TIPIFICAÇÃO:\n${conteudo.tipificacao}\n\n`
+  }
+  
+  // Objetos/Incisos (mais comum)
+  if (conteudo.objetos && Array.isArray(conteudo.objetos)) {
+    formattedContent += `📜 OBJETOS PROTEGIDOS (INCISOS):\n`
+    conteudo.objetos.forEach(objeto => {
+      formattedContent += `${objeto}\n`
+    })
+    formattedContent += '\n'
+  }
+  
+  // Elementos do crime
+  if (conteudo.elementos && Array.isArray(conteudo.elementos)) {
+    formattedContent += `⚖️ ELEMENTOS DO CRIME:\n`
+    conteudo.elementos.forEach(elemento => {
+      formattedContent += `• ${elemento}\n`
+    })
+    formattedContent += '\n'
+  }
+  
+  // Objetos protegidos (diferente de objetos/incisos)
+  if (conteudo.objetos_protegidos && Array.isArray(conteudo.objetos_protegidos)) {
+    formattedContent += `🛡️ BENS JURÍDICOS PROTEGIDOS:\n`
+    conteudo.objetos_protegidos.forEach(objeto => {
+      formattedContent += `• ${objeto}\n`
+    })
+    formattedContent += '\n'
+  }
+  
+  // Sujeitos
+  if (conteudo.sujeito_ativo) {
+    formattedContent += `👤 SUJEITO ATIVO: ${conteudo.sujeito_ativo}\n`
+  }
+  if (conteudo.sujeito_passivo) {
+    formattedContent += `👥 SUJEITO PASSIVO: ${conteudo.sujeito_passivo}\n`
+  }
+  if (conteudo.sujeito_ativo || conteudo.sujeito_passivo) {
+    formattedContent += '\n'
+  }
+  
+  // Modalidades e aspectos objetivos/subjetivos
+  if (conteudo.aspecto_objetivo) {
+    formattedContent += `🎯 ASPECTO OBJETIVO: ${conteudo.aspecto_objetivo}\n`
+  }
+  if (conteudo.aspecto_subjetivo) {
+    formattedContent += `🧠 ASPECTO SUBJETIVO: ${conteudo.aspecto_subjetivo}\n`
+  }
+  if (conteudo.aspecto_objetivo || conteudo.aspecto_subjetivo) {
+    formattedContent += '\n'
+  }
+  
+  // Modalidades (tentativa, consumação, etc.)
+  if (conteudo.tentativa) {
+    formattedContent += `⏰ TENTATIVA: ${conteudo.tentativa}\n`
+  }
+  if (conteudo.consumacao) {
+    formattedContent += `✅ CONSUMAÇÃO: ${conteudo.consumacao}\n`
+  }
+  if (conteudo.tentativa || conteudo.consumacao) {
+    formattedContent += '\n'
+  }
+  
+  // Pena (sempre importante)
+  if (conteudo.pena) {
+    formattedContent += `⚖️ PENA: ${conteudo.pena}\n\n`
+  }
+  
+  // Observações e notas
+  if (conteudo.observacoes) {
+    formattedContent += `📝 OBSERVAÇÕES IMPORTANTES:\n${conteudo.observacoes}\n\n`
+  }
+  
+  if (conteudo.notas) {
+    formattedContent += `💡 NOTAS ADICIONAIS:\n${conteudo.notas}\n\n`
+  }
+  
+  // Classificações doutrinárias
+  if (conteudo.classificacao) {
+    formattedContent += `📚 CLASSIFICAÇÃO DOUTRINÁRIA:\n`
+    if (Array.isArray(conteudo.classificacao)) {
+      conteudo.classificacao.forEach(item => {
+        formattedContent += `• ${item}\n`
+      })
+    } else {
+      formattedContent += `${conteudo.classificacao}\n`
+    }
+    formattedContent += '\n'
+  }
+  
+  return formattedContent.trim() || 'Informações não disponíveis'
 }
 
 export { generateSingleQuestion }

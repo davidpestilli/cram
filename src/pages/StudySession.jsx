@@ -14,6 +14,8 @@ import ShakeAnimation from '../components/ShakeAnimation'
 import LoadingSpinner from '../components/LoadingSpinner'
 import EmptyState from '../components/EmptyState'
 import AchievementNotification from '../components/AchievementNotification'
+import AIQuestionHelper from '../components/AIQuestionHelper'
+import LegalTextViewer from '../components/LegalTextViewer'
 
 const StudySession = () => {
   const { subjectId, sectionId } = useParams()
@@ -28,8 +30,14 @@ const StudySession = () => {
   const [error, setError] = useState('')
   const [questions, setQuestions] = useState([])
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
+  const [sectionContent, setSectionContent] = useState(null)
   const [userAnswer, setUserAnswer] = useState(null)
   const [showExplanation, setShowExplanation] = useState(false)
+  
+  // Cache simples de respostas durante a sessão
+  const [questionAnswers, setQuestionAnswers] = useState(new Map())
+  const [questionExplanations, setQuestionExplanations] = useState(new Map())
+  
   const [sessionStats, setSessionStats] = useState({
     correct: 0,
     incorrect: 0,
@@ -88,6 +96,20 @@ const StudySession = () => {
       setQuestions(result.questions)
       setQuestionStartTime(Date.now())
       
+      // Limpar cache ao iniciar nova sessão
+      setQuestionAnswers(new Map())
+      setQuestionExplanations(new Map())
+      
+      // Carregar conteúdo da seção para o viewer legal
+      try {
+        const sectionData = await QuestionsService.getSectionContent(parseInt(sectionId))
+        setSectionContent(sectionData)
+        console.log('📖 Conteúdo da seção carregado:', sectionData?.titulo)
+      } catch (sectionError) {
+        console.warn('⚠️ Erro ao carregar conteúdo da seção:', sectionError)
+        // Não é crítico, continua sem o conteúdo
+      }
+      
       // Marcar como inicializado com sucesso
       hasInitializedRef.current = true
 
@@ -117,6 +139,29 @@ const StudySession = () => {
   //   }
   // }, [getNextNotification, showAchievementNotification])
 
+  // Atualizar estado da questão atual quando mudar de índice
+  useEffect(() => {
+    if (questions.length > 0) {
+      const savedAnswer = questionAnswers.get(currentQuestionIndex)
+      const savedExplanation = questionExplanations.get(currentQuestionIndex)
+      
+      // Só atualizar se houver dados salvos, senão manter estado atual
+      if (savedAnswer !== undefined) {
+        setUserAnswer(savedAnswer)
+      } else if (userAnswer !== null) {
+        // Reset para null apenas se não há resposta salva e temos resposta atual
+        setUserAnswer(null)
+      }
+      
+      if (savedExplanation !== undefined) {
+        setShowExplanation(savedExplanation)
+      } else if (showExplanation) {
+        // Reset apenas se não há explicação salva e temos explicação atual
+        setShowExplanation(false)
+      }
+    }
+  }, [currentQuestionIndex, questions.length])
+  
   // Cleanup on unmount to allow reinitializing next time
   useEffect(() => {
     return () => {
@@ -229,6 +274,12 @@ const StudySession = () => {
     }
 
     // Show animations and explanation
+    // Salvar resposta e estado da questão no cache
+    setQuestionAnswers(prev => {
+      const newMap = new Map(prev).set(currentQuestionIndex, answer)
+      return newMap
+    })
+    
     if (isCorrect) {
       setShowXpAnimation(true)
       setShowParticles(true)
@@ -236,6 +287,8 @@ const StudySession = () => {
       setTimeout(() => {
         setShowExplanation(true)
         setShowParticles(false)
+        // Salvar estado de explicação mostrada
+        setQuestionExplanations(prev => new Map(prev).set(currentQuestionIndex, true))
       }, 1500) // Wait for animation to finish
     } else {
       setShowShakeAnimation(true)
@@ -245,6 +298,8 @@ const StudySession = () => {
         setShowExplanation(true)
         setShowParticles(false)
         setShowShakeAnimation(false)
+        // Salvar estado de explicação mostrada
+        setQuestionExplanations(prev => new Map(prev).set(currentQuestionIndex, true))
       }, 800)
     }
   }
@@ -265,8 +320,13 @@ const StudySession = () => {
     } else {
       // Next question
       setCurrentQuestionIndex(currentQuestionIndex + 1)
-      setUserAnswer(null)
-      setShowExplanation(false)
+      setQuestionStartTime(Date.now())
+    }
+  }
+
+  const handlePreviousQuestion = () => {
+    if (currentQuestionIndex > 0) {
+      setCurrentQuestionIndex(currentQuestionIndex - 1)
       setQuestionStartTime(Date.now())
     }
   }
@@ -278,10 +338,9 @@ const StudySession = () => {
     // Now proceed to next question or session complete
     if (currentQuestionIndex + 1 >= questions.length) {
       setSessionComplete(true)
+      // Não limpar estado aqui - usuário pode querer revisar
     } else {
       setCurrentQuestionIndex(currentQuestionIndex + 1)
-      setUserAnswer(null)
-      setShowExplanation(false)
       setQuestionStartTime(Date.now())
     }
   }
@@ -483,6 +542,9 @@ const StudySession = () => {
                   hasInitializedRef.current = false
                   isInitializingRef.current = false
                   sessionStorage.removeItem(sessionKey)
+                  // Limpar cache de respostas
+                  setQuestionAnswers(new Map())
+                  setQuestionExplanations(new Map())
                   initializeStudySession()
                 }}
                 className="btn-secondary"
@@ -604,17 +666,26 @@ const StudySession = () => {
                 </div>
               )}
 
-              {/* Next Button */}
-              <div className="text-center">
-                <button
-                  onClick={handleNextQuestion}
-                  className="btn-primary px-8"
-                >
-                  {currentQuestionIndex + 1 >= questions.length ? 'Finalizar Sessão' : 'Próxima Questão'}
-                </button>
-              </div>
             </div>
           )}
+          
+          {/* Navigation Buttons - Sempre visíveis */}
+          <div className="flex justify-center items-center space-x-4 mt-6 pt-4 border-t">
+            {currentQuestionIndex > 0 && (
+              <button
+                onClick={handlePreviousQuestion}
+                className="btn-secondary px-6"
+              >
+                ← Questão Anterior
+              </button>
+            )}
+            <button
+              onClick={handleNextQuestion}
+              className="btn-primary px-8"
+            >
+              {currentQuestionIndex + 1 >= questions.length ? 'Finalizar Sessão' : 'Próxima Questão'}
+            </button>
+          </div>
         </div>
         </ShakeAnimation>
 
@@ -625,6 +696,22 @@ const StudySession = () => {
             Criada por: {currentQuestion.created_by_ai === 'mock' ? 'Sistema' : 'IA'}
           </p>
         </div>
+
+        {/* Legal Text Viewer */}
+        <LegalTextViewer 
+          sectionContent={sectionContent}
+          currentQuestion={currentQuestion}
+          show={!loading} // Mostrar quando carregado
+        />
+
+        {/* AI Question Helper */}
+        <AIQuestionHelper 
+          question={currentQuestion}
+          userAnswer={userAnswer}
+          isCorrect={userAnswer === currentQuestion?.correct_answer}
+          sectionContent={sectionContent}
+          show={showExplanation} // Mostrar apenas após responder
+        />
 
         {/* Animations */}
         <XpGoldAnimation 

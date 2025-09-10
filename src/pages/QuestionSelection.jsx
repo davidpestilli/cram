@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { QuestionsService } from '../services/questionsService'
 import Layout from '../components/Layout/Layout'
 import StudyModeSelector from '../components/StudyModeSelector'
+import QuestionsTable from '../components/QuestionsTable'
 import spacedRepetitionService from '../services/spacedRepetitionService'
 import { STUDY_MODES } from '../services/studyModeService'
 
@@ -15,6 +16,7 @@ const QuestionSelection = () => {
   const [loading, setLoading] = useState(true)
   const [questionStats, setQuestionStats] = useState(null)
   const [error, setError] = useState('')
+  const [showQuestionsTable, setShowQuestionsTable] = useState(false)
 
   const loadQuestionStats = useCallback(async () => {
     try {
@@ -40,6 +42,11 @@ const QuestionSelection = () => {
   }, [subjectId, sectionId, profile?.id, loadQuestionStats])
 
   const handleQuestionTypeSelect = (questionType) => {
+    if (questionType === 'table') {
+      setShowQuestionsTable(true)
+      return
+    }
+    
     navigate(`/subjects/${subjectId}/sections/${sectionId}/study`, {
       state: { questionType }
     })
@@ -86,6 +93,24 @@ const QuestionSelection = () => {
     )
   }
 
+  if (showQuestionsTable) {
+    return (
+      <Layout showFooter={false}>
+        <div className="max-w-7xl mx-auto py-8 px-4">
+          <div className="mb-6">
+            <button
+              onClick={() => setShowQuestionsTable(false)}
+              className="flex items-center gap-2 text-primary-600 hover:text-primary-700 mb-4"
+            >
+              ← Voltar para Escolha de Tipos
+            </button>
+          </div>
+          <QuestionsTable />
+        </div>
+      </Layout>
+    )
+  }
+
   return (
     <Layout showFooter={false}>
       <div className="max-w-4xl mx-auto py-8 px-4">
@@ -98,7 +123,7 @@ const QuestionSelection = () => {
         </div>
 
         {/* Question Options */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           
           {/* Questões Já Respondidas */}
           <div 
@@ -154,6 +179,24 @@ const QuestionSelection = () => {
               <div className="bg-purple-50 rounded-lg p-3">
                 <div className="text-2xl font-bold text-purple-600">∞</div>
                 <div className="text-purple-700 text-xs">sempre disponível</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Tabela de Questões */}
+          <div 
+            className={getCardClass(false)}
+            onClick={() => handleQuestionTypeSelect('table')}
+          >
+            <div className="text-center">
+              <div className="text-4xl mb-4">📋</div>
+              <h3 className="text-lg font-semibold mb-2">Tabela de Questões</h3>
+              <p className="text-gray-600 text-sm mb-4">
+                Visualizar, analisar e gerenciar todas as questões do banco
+              </p>
+              <div className="bg-orange-50 rounded-lg p-3">
+                <div className="text-2xl font-bold text-orange-600">📊</div>
+                <div className="text-orange-700 text-xs">análise completa</div>
               </div>
             </div>
           </div>

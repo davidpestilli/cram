@@ -6,6 +6,9 @@ import direitoPenalEstruturado from '../data/direito_penal_estruturado.json'
 
 console.log('🔄 QuestionsService carregado com import estático:', !!direitoPenalEstruturado)
 
+// Controle de execução simultânea
+const generationLocks = new Map()
+
 export class QuestionsService {
   static async getOrCreateQuestions(subjectId, sectionId, options = {}) {
     try {
@@ -215,6 +218,28 @@ export class QuestionsService {
   }
 
   static async generateNewQuestions(subjectId, sectionId, options = {}) {
+    const lockKey = `${subjectId}-${sectionId}`
+    
+    // Verificar se já existe uma geração em andamento
+    if (generationLocks.has(lockKey)) {
+      console.log(`⏸️ Geração já em andamento para seção ${sectionId}, aguardando conclusão...`)
+      return await generationLocks.get(lockKey)
+    }
+
+    // Criar promise e adicionar ao lock
+    const generationPromise = this._executeGeneration(subjectId, sectionId, options)
+    generationLocks.set(lockKey, generationPromise)
+    
+    try {
+      const result = await generationPromise
+      return result
+    } finally {
+      // Sempre remover o lock ao finalizar
+      generationLocks.delete(lockKey)
+    }
+  }
+
+  static async _executeGeneration(subjectId, sectionId, options = {}) {
     try {
       const { count = 5, onProgress = null } = options
       
@@ -226,8 +251,8 @@ export class QuestionsService {
 
       console.log(`🚀 Gerando ${count} novas questões para seção ${sectionId} com sistema 3F+2V...`)
       
-      // Gerar questões com sistema progressivo (3F+2V)
-      const generationResult = await generateQuestionsProgressively(sectionContent, count, onProgress)
+      // Gerar questões com sistema progressivo inteligente (3F+2V + análise semântica)
+      const generationResult = await generateQuestionsProgressively(sectionContent, count, onProgress, subjectId, sectionId)
       
       if (generationResult.questions.length === 0) {
         throw new Error('Nenhuma questão pôde ser gerada')

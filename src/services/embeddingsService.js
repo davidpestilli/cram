@@ -2,7 +2,7 @@ import OpenAI from 'openai'
 
 const OPENAI_API_KEY = import.meta.env.VITE_OPENAI_API_KEY
 const EMBEDDING_MODEL = import.meta.env.OPENAI_EMBEDDING_MODEL || 'text-embedding-3-small'
-const SIMILARITY_THRESHOLD = parseFloat(import.meta.env.SIMILARITY_THRESHOLD) || 0.85
+const SIMILARITY_THRESHOLD = parseFloat(import.meta.env.SIMILARITY_THRESHOLD) || 0.75
 const MAX_REGENERATION_ATTEMPTS = parseInt(import.meta.env.MAX_REGENERATION_ATTEMPTS) || 3
 
 class EmbeddingsService {

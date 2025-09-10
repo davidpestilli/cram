@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase'
 import { generateSingleQuestion } from './directAIService'
 
 const MAX_REGENERATION_ATTEMPTS = parseInt(import.meta.env.MAX_REGENERATION_ATTEMPTS) || 3
-const SIMILARITY_THRESHOLD = parseFloat(import.meta.env.SIMILARITY_THRESHOLD) || 0.85
+const SIMILARITY_THRESHOLD = parseFloat(import.meta.env.SIMILARITY_THRESHOLD) || 0.75
 
 class QuestionDeduplicationService {
   constructor() {
