@@ -1,11 +1,11 @@
 -- =====================================================
--- SCRIPT PARA POPULAR SUBSEÇÕES
+-- SCRIPT PARA POPULAR SUBSEÇÕES - VERSÃO COM TIPOS PRECISOS
 -- =====================================================
 -- 
 -- Este script popula as tabelas content_subsections e 
 -- subsection_question_stats com os dados do JSON estruturado
 --
--- Execute após a migração subsections_migration.sql
+-- Execute APÓS expand_valid_tipo_constraint.sql
 -- =====================================================
 
 -- 1. POPULAR SUBSEÇÕES DA SEÇÃO 1 (Art. 293)
@@ -56,8 +56,8 @@ INSERT INTO content_subsections (id, section_id, titulo, conteudo, tipo, peso, o
 ('doc_publico_pena', 5, 'Pena Básica - Documento Público', 'reclusão, de dois a seis anos, e multa', 'consequencia', 1, 2),
 ('doc_publico_agravante', 5, 'Agravante Funcionário Público', 'funcionário público prevalecendo-se do cargo - aumenta-se a pena de sexta parte', 'agravante', 2, 3),
 ('doc_equiparado_paraestatal', 5, 'Documento de Entidade Paraestatal', 'documento emanado de entidade paraestatal', 'objeto_equiparado', 1, 4),
-('doc_equiparado_titulo', 5, 'Título ao Portador', 'título ao portador ou transmissível por endosso', 'objeto_crime', 1, 5),
-('doc_equiparado_acoes', 5, 'Ações de Sociedade Comercial', 'ações de sociedade comercial, livros mercantis e testamento particular', 'objeto_crime', 1, 6),
+('doc_equiparado_titulo', 5, 'Título ao Portador', 'título ao portador ou transmissível por endosso', 'objeto_equiparado', 1, 5),
+('doc_equiparado_acoes', 5, 'Ações de Sociedade Comercial', 'ações de sociedade comercial, livros mercantis e testamento particular', 'objeto_equiparado', 1, 6),
 ('doc_previdenciario_inserir', 5, 'Falsidade Previdenciária - Inserção', 'inserir pessoa não segurada na folha de pagamento ou declaração falsa em CTPS/documento previdenciário', 'conduta_especifica', 2, 7),
 ('doc_previdenciario_omitir', 5, 'Falsidade Previdenciária - Omissão', 'omitir dados do segurado em documentos previdenciários', 'conduta_especifica', 1, 8)
 ON CONFLICT (id, section_id) DO NOTHING;
@@ -66,23 +66,23 @@ ON CONFLICT (id, section_id) DO NOTHING;
 INSERT INTO content_subsections (id, section_id, titulo, conteudo, tipo, peso, ordem) VALUES
 ('doc_particular_tipificacao', 6, 'Tipificação - Documento Particular', 'falsificar, no todo ou em parte, documento particular ou alterar documento particular verdadeiro', 'conceito_base', 2, 1),
 ('doc_particular_pena', 6, 'Pena Documento Particular', 'reclusão, de um a cinco anos, e multa', 'consequencia', 1, 2),
-('cartao_equiparacao', 6, 'Equiparação de Cartões', 'cartão de crédito ou débito equipara-se a documento particular', 'objeto_crime', 1, 3),
+('cartao_equiparacao', 6, 'Equiparação de Cartões', 'cartão de crédito ou débito equipara-se a documento particular', 'objeto_equiparado', 1, 3),
 ('falsidade_ideologica_condutas', 6, 'Falsidade Ideológica - Condutas', 'omitir declaração que devia constar ou inserir declaração falsa ou diversa', 'conceito_base', 2, 4),
-('falsidade_ideologica_finalidade', 6, 'Finalidade da Falsidade Ideológica', 'prejudicar direito, criar obrigação ou alterar verdade sobre fato juridicamente relevante', 'conceito_base', 2, 5),
+('falsidade_ideologica_finalidade', 6, 'Finalidade da Falsidade Ideológica', 'prejudicar direito, criar obrigação ou alterar verdade sobre fato juridicamente relevante', 'elemento_subjetivo', 2, 5),
 ('falsidade_penas_diferenciadas', 6, 'Penas da Falsidade Ideológica', 'documento público: reclusão de 1-5 anos e multa | documento particular: reclusão de 1-3 anos e multa', 'consequencia', 1, 6),
 ('falsidade_agravantes', 6, 'Agravantes Falsidade Ideológica', 'funcionário público prevalecendo-se do cargo ou falsificação de registro civil - aumenta 1/6', 'agravante', 1, 7)
 ON CONFLICT (id, section_id) DO NOTHING;
 
 -- 7. POPULAR SUBSEÇÕES DA SEÇÃO 7 (Art. 300-308)
 INSERT INTO content_subsections (id, section_id, titulo, conteudo, tipo, peso, ordem) VALUES
-('falso_reconhecimento_condutas', 7, 'Falso Reconhecimento de Firma', 'reconhecer como verdadeira firma ou letra que não seja', 'conduta_especifica', 2, 1),
+('falso_reconhecimento_condutas', 7, 'Falso Reconhecimento de Firma', 'reconhecer como verdadeira firma ou letra que não seja', 'crime_especifico', 2, 1),
 ('falso_reconhecimento_penas', 7, 'Penas do Falso Reconhecimento', 'documento público: reclusão 1-5 anos e multa | documento particular: reclusão 1-3 anos e multa', 'consequencia', 1, 2),
-('certidao_falsa_condutas', 7, 'Certidão ou Atestado Falso', 'atestar ou certificar falsamente fato que habilite a cargo público ou vantagem', 'conduta_especifica', 1, 3),
+('certidao_falsa_condutas', 7, 'Certidão ou Atestado Falso', 'atestar ou certificar falsamente fato que habilite a cargo público ou vantagem', 'crime_especifico', 1, 3),
 ('certidao_falsa_penas', 7, 'Penas Certidão Falsa', 'atestar: detenção 2 meses-1 ano | falsificar: detenção 3 meses-2 anos | com lucro: + multa', 'consequencia', 1, 4),
-('atestado_medico_falso', 7, 'Atestado Médico Falso', 'médico dar atestado falso no exercício da profissão', 'conduta_especifica', 2, 5),
+('atestado_medico_falso', 7, 'Atestado Médico Falso', 'médico dar atestado falso no exercício da profissão', 'crime_especifico', 2, 5),
 ('atestado_medico_pena', 7, 'Pena Atestado Médico Falso', 'detenção, de um mês a um ano | com fim de lucro: + multa', 'consequencia', 1, 6),
 ('uso_documento_falso', 7, 'Uso de Documento Falso', 'usar documento falsificado - mesma pena da falsificação', 'conduta_equiparada', 2, 7),
-('supressao_documento', 7, 'Supressão de Documento', 'destruir, suprimir ou ocultar documento de que não podia dispor', 'conduta_especifica', 1, 8),
+('supressao_documento', 7, 'Supressão de Documento', 'destruir, suprimir ou ocultar documento de que não podia dispor', 'crime_especifico', 1, 8),
 ('supressao_penas', 7, 'Penas Supressão Documento', 'documento público: reclusão 2-6 anos e multa | documento particular: reclusão 1-5 anos e multa', 'consequencia', 1, 9)
 ON CONFLICT (id, section_id) DO NOTHING;
 
@@ -100,42 +100,42 @@ ON CONFLICT (id, section_id) DO NOTHING;
 INSERT INTO content_subsections (id, section_id, titulo, conteudo, tipo, peso, ordem) VALUES
 ('peculato_condutas', 9, 'Condutas do Peculato', 'apropriar-se de bem público/particular em razão do cargo ou desviar bem em proveito próprio ou alheio', 'conceito_base', 2, 1),
 ('peculato_pena', 9, 'Pena do Peculato', 'reclusão, de dois a doze anos, e multa', 'consequencia', 1, 2),
-('peculato_furto', 9, 'Peculato-Furto', 'funcionário sem posse que subtrai valendo-se da facilidade da função', 'conduta_especifica', 2, 3),
-('peculato_culposo', 9, 'Peculato Culposo', 'concorrer culposamente para crime de outrem - detenção de 3 meses a 1 ano', 'conduta_especifica', 1, 4),
-('peculato_reparacao', 9, 'Reparação do Dano', 'reparação antes da sentença extingue punibilidade no peculato culposo', 'consequencia', 2, 5),
-('apropriacao_erro', 9, 'Apropriação por Erro', 'apropriar-se de dinheiro recebido por erro de outrem no exercício do cargo', 'conduta_especifica', 1, 6),
-('dados_falsos_sistema', 9, 'Inserção de Dados Falsos', 'inserir dados falsos em sistema informatizado da Administração', 'conduta_especifica', 2, 7),
-('alteracao_sistema', 9, 'Alteração de Sistema', 'modificar sistema de informações sem autorização', 'conduta_especifica', 1, 8),
-('extravio_documento', 9, 'Extravio de Documento', 'extraviar, sonegar ou inutilizar livro ou documento oficial', 'conduta_especifica', 1, 9),
-('emprego_irregular_verbas', 9, 'Emprego Irregular de Verbas', 'dar aplicação diversa da legal a verbas públicas', 'conduta_especifica', 1, 10)
+('peculato_furto', 9, 'Peculato-Furto', 'funcionário sem posse que subtrai valendo-se da facilidade da função', 'modalidade_especifica', 2, 3),
+('peculato_culposo', 9, 'Peculato Culposo', 'concorrer culposamente para crime de outrem - detenção de 3 meses a 1 ano', 'modalidade_culposa', 1, 4),
+('peculato_reparacao', 9, 'Reparação do Dano', 'reparação antes da sentença extingue punibilidade no peculato culposo', 'extincao_punibilidade', 2, 5),
+('apropriacao_erro', 9, 'Apropriação por Erro', 'apropriar-se de dinheiro recebido por erro de outrem no exercício do cargo', 'crime_especifico', 1, 6),
+('dados_falsos_sistema', 9, 'Inserção de Dados Falsos', 'inserir dados falsos em sistema informatizado da Administração', 'crime_informatico', 2, 7),
+('alteracao_sistema', 9, 'Alteração de Sistema', 'modificar sistema de informações sem autorização', 'crime_informatico', 1, 8),
+('extravio_documento', 9, 'Extravio de Documento', 'extraviar, sonegar ou inutilizar livro ou documento oficial', 'crime_especifico', 1, 9),
+('emprego_irregular_verbas', 9, 'Emprego Irregular de Verbas', 'dar aplicação diversa da legal a verbas públicas', 'crime_especifico', 1, 10)
 ON CONFLICT (id, section_id) DO NOTHING;
 
 -- 10. POPULAR SUBSEÇÕES DA SEÇÃO 10 (Art. 316-317, 333)
 INSERT INTO content_subsections (id, section_id, titulo, conteudo, tipo, peso, ordem) VALUES
 ('concussao_conduta', 10, 'Conduta da Concussão', 'exigir vantagem indevida em razão da função', 'conceito_base', 2, 1),
 ('concussao_pena', 10, 'Pena da Concussão', 'reclusão, de 2 a 12 anos, e multa', 'consequencia', 1, 2),
-('excesso_exacao', 10, 'Excesso de Exação', 'exigir tributo indevido ou usar meio vexatório - reclusão de 3 a 8 anos e multa', 'conduta_especifica', 2, 3),
+('excesso_exacao', 10, 'Excesso de Exação', 'exigir tributo indevido ou usar meio vexatório - reclusão de 3 a 8 anos e multa', 'modalidade_especifica', 2, 3),
 ('corrupcao_passiva_condutas', 10, 'Corrupção Passiva - Condutas', 'solicitar, receber ou aceitar promessa de vantagem indevida', 'conceito_base', 2, 4),
 ('corrupcao_passiva_pena', 10, 'Pena Corrupção Passiva', 'reclusão, de 2 a 12 anos, e multa', 'consequencia', 1, 5),
 ('corrupcao_passiva_agravante', 10, 'Agravante Corrupção Passiva', 'aumenta 1/3 se retarda, omite ou pratica ato infringindo dever', 'agravante', 1, 6),
-('corrupcao_passiva_privilegiada', 10, 'Corrupção Passiva Privilegiada', 'ceder a pedido ou influência sem vantagem - detenção de 3 meses a 1 ano ou multa', 'conduta_especifica', 1, 7),
+('corrupcao_passiva_privilegiada', 10, 'Corrupção Passiva Privilegiada', 'ceder a pedido ou influência sem vantagem - detenção de 3 meses a 1 ano ou multa', 'modalidade_privilegiada', 1, 7),
 ('corrupcao_ativa_conduta', 10, 'Corrupção Ativa - Conduta', 'oferecer ou prometer vantagem a funcionário público', 'conceito_base', 2, 8),
 ('corrupcao_ativa_pena', 10, 'Pena Corrupção Ativa', 'reclusão, de 2 a 12 anos, e multa', 'consequencia', 1, 9),
-('diferencas_conceituais', 10, 'Diferenças entre Concussão e Corrupção', 'concussão: funcionário EXIGE (mais grave) | corrupção passiva: funcionário SOLICITA/RECEBE | corrupção ativa: particular OFERECE', 'conceito_base', 2, 10)
+('diferencas_conceituais', 10, 'Diferenças entre Concussão e Corrupção', 'concussão: funcionário EXIGE (mais grave) | corrupção passiva: funcionário SOLICITA/RECEBE | corrupção ativa: particular OFERECE', 'conceito_diferencial', 2, 10)
 ON CONFLICT (id, section_id) DO NOTHING;
 
 -- 11. POPULAR SUBSEÇÕES DA SEÇÃO 11 (Art. 319-327)
 INSERT INTO content_subsections (id, section_id, titulo, conteudo, tipo, peso, ordem) VALUES
 ('prevaricacao_condutas', 11, 'Condutas da Prevaricação', 'retardar, deixar de praticar ou praticar ato contra lei para satisfazer interesse pessoal', 'conceito_base', 2, 1),
 ('prevaricacao_pena', 11, 'Pena da Prevaricação', 'detenção, de três meses a um ano, e multa', 'consequencia', 1, 2),
-('prevaricacao_elemento_subjetivo', 11, 'Elemento Subjetivo da Prevaricação', 'exige interesse ou sentimento pessoal do agente', 'conceito_base', 2, 3),
-('condescendencia_criminosa', 11, 'Condescendência Criminosa', 'não responsabilizar subordinado que cometeu infração no exercício do cargo', 'conduta_especifica', 1, 4),
-('advocacia_administrativa', 11, 'Advocacia Administrativa', 'patrocinar interesse privado valendo-se da qualidade de funcionário', 'conduta_especifica', 2, 5),
+('prevaricacao_elemento_subjetivo', 11, 'Elemento Subjetivo da Prevaricação', 'exige interesse ou sentimento pessoal do agente', 'elemento_subjetivo', 2, 3),
+('condescendencia_criminosa', 11, 'Condescendência Criminosa', 'não responsabilizar subordinado que cometeu infração no exercício do cargo', 'crime_especifico', 1, 4),
+('advocacia_administrativa', 11, 'Advocacia Administrativa', 'patrocinar interesse privado valendo-se da qualidade de funcionário', 'crime_especifico', 2, 5),
 ('advocacia_penas', 11, 'Penas Advocacia Administrativa', 'interesse legítimo: detenção 1-3 meses ou multa | interesse ilegítimo: detenção 3 meses-1 ano e multa', 'consequencia', 1, 6),
-('violencia_arbitraria', 11, 'Violência Arbitrária', 'praticar violência no exercício ou pretexto da função', 'conduta_especifica', 1, 7),
-('abandono_funcao', 11, 'Abandono de Função', 'abandonar cargo fora dos casos legais', 'conduta_especifica', 1, 8),
+('violencia_arbitraria', 11, 'Violência Arbitrária', 'praticar violência no exercício ou pretexto da função', 'crime_especifico', 1, 7),
+('abandono_funcao', 11, 'Abandono de Função', 'abandonar cargo fora dos casos legais', 'crime_especifico', 1, 8),
 ('abandono_penas_graduadas', 11, 'Penas Graduadas do Abandono', 'básica: detenção 15 dias-1 mês | com prejuízo: detenção 3 meses-1 ano | fronteira: detenção 1-3 anos', 'consequencia', 2, 9),
-('violacao_sigilo', 11, 'Violação do Sigilo Funcional', 'revelar fato sigiloso ou facilitar revelação', 'conduta_especifica', 2, 10),
+('violacao_sigilo', 11, 'Violação do Sigilo Funcional', 'revelar fato sigiloso ou facilitar revelação', 'crime_especifico', 2, 10),
 ('sigilo_penas', 11, 'Penas Violação Sigilo', 'básica: detenção 6 meses-2 anos ou multa | com dano: reclusão 2-6 anos e multa', 'consequencia', 1, 11),
 ('conceito_funcionario_publico', 11, 'Conceito de Funcionário Público', 'quem exerce cargo, emprego ou função pública, mesmo transitoriamente, incluindo entidade paraestatal', 'conceito_base', 2, 12)
 ON CONFLICT (id, section_id) DO NOTHING;
@@ -144,16 +144,16 @@ ON CONFLICT (id, section_id) DO NOTHING;
 INSERT INTO content_subsections (id, section_id, titulo, conteudo, tipo, peso, ordem) VALUES
 ('denunciacao_caluniosa_conduta', 12, 'Denunciação Caluniosa', 'imputar crime ou infração que sabe ser falsa', 'conceito_base', 2, 1),
 ('denunciacao_caluniosa_pena', 12, 'Pena Denunciação Caluniosa', 'reclusão, de dois a oito anos, e multa', 'consequencia', 1, 2),
-('denunciacao_qualificadoras', 12, 'Qualificadoras Denunciação', 'anonimato: aumenta 1/6 | contravenção: diminui 1/2', 'agravante', 1, 3),
+('denunciacao_qualificadoras', 12, 'Qualificadoras Denunciação', 'anonimato: aumenta 1/6 | contravenção: diminui 1/2', 'modificadoras', 1, 3),
 ('falso_testemunho_condutas', 12, 'Falso Testemunho - Condutas', 'afirmar falsamente, negar a verdade ou calar a verdade', 'conceito_base', 2, 4),
-('falso_testemunho_sujeitos', 12, 'Sujeitos do Falso Testemunho', 'testemunha, perito, contador, tradutor, intérprete', 'conceito_base', 1, 5),
+('falso_testemunho_sujeitos', 12, 'Sujeitos do Falso Testemunho', 'testemunha, perito, contador, tradutor, intérprete', 'sujeito_ativo', 1, 5),
 ('falso_testemunho_pena', 12, 'Pena Falso Testemunho', 'reclusão, de 2 a 4 anos, e multa', 'consequencia', 1, 6),
 ('falso_testemunho_agravante', 12, 'Agravantes Falso Testemunho', 'suborno ou processo contra administração: aumenta 1/6 a 1/3', 'agravante', 1, 7),
-('retratacao_falso_testemunho', 12, 'Retratação no Falso Testemunho', 'deixa de ser punível se retratar-se antes da sentença', 'consequencia', 2, 8),
-('corrupcao_testemunha', 12, 'Corrupção de Testemunha', 'dar, oferecer ou prometer vantagem para testemunha mentir', 'conduta_especifica', 1, 9),
-('coacao_processo', 12, 'Coação no Curso do Processo', 'usar violência contra pessoa que intervém em processo', 'conduta_especifica', 1, 10),
-('justica_proprias_maos', 12, 'Exercício Arbitrário das Próprias Razões', 'fazer justiça pelas próprias mãos para realizar ou assegurar pretensão', 'conduta_especifica', 2, 11),
-('fraude_processual', 12, 'Fraude Processual', 'inovar artificiosamente estado de coisa para induzir erro judicial', 'conduta_especifica', 2, 12),
+('retratacao_falso_testemunho', 12, 'Retratação no Falso Testemunho', 'deixa de ser punível se retratar-se antes da sentença', 'extincao_punibilidade', 2, 8),
+('corrupcao_testemunha', 12, 'Corrupção de Testemunha', 'dar, oferecer ou prometer vantagem para testemunha mentir', 'crime_especifico', 1, 9),
+('coacao_processo', 12, 'Coação no Curso do Processo', 'usar violência contra pessoa que intervém em processo', 'crime_especifico', 1, 10),
+('justica_proprias_maos', 12, 'Exercício Arbitrário das Próprias Razões', 'fazer justiça pelas próprias mãos para realizar ou assegurar pretensão', 'crime_especifico', 2, 11),
+('fraude_processual', 12, 'Fraude Processual', 'inovar artificiosamente estado de coisa para induzir erro judicial', 'crime_especifico', 2, 12),
 ('fraude_processual_penas', 12, 'Penas Fraude Processual', 'processo civil: detenção 3 meses-2 anos e multa | processo penal: penas em dobro', 'consequencia', 1, 13)
 ON CONFLICT (id, section_id) DO NOTHING;
 
@@ -188,27 +188,9 @@ ORDER BY cs.section_id, cs.ordem;
 -- =====================================================
 -- RESULTADO ESPERADO:
 -- =====================================================
--- Seção 1: 9 subseções, peso total = 11
--- - tipificacao (peso 2) → target = 2 questões  
--- - modalidades (peso 2) → target = 2 questões
--- - objeto_vale_postal (peso 1) → target = 1 questão
--- - demais objetos (peso 1 cada) → target = 1 questão cada
--- - pena (peso 1) → target = 1 questão
---
--- Seção 2: 7 subseções, peso total = 10  
--- - condutas equiparadas do §1º (peso 2 cada) → target = 2 questões cada
--- - demais condutas (peso 1 cada) → target = 1 questão cada
---
--- Seção 3: 4 subseções, peso total = 6
--- - petrechos_conduta (peso 2) → target = 3 questões
--- - funcionario_agravante (peso 2) → target = 3 questões  
--- - demais (peso 1 cada) → target = 2 questões cada
---
--- Seção 4: 6 subseções, peso total = 8
--- - selos_tipificacao (peso 2) → target = 3 questões
--- - demais (peso 1 cada) → target = 1-2 questões cada
---
--- Seções 5-12: Estruturadas com base nos conteúdos do JSON original
--- Distribuição equilibrada de pesos conforme importância dos conceitos
 -- Total: 12 seções completas abrangendo todo o Direito Penal
+-- Tipos tecnicamente precisos para melhor granularidade:
+-- - modalidade_especifica, modalidade_culposa, modalidade_privilegiada
+-- - extincao_punibilidade, crime_informatico, elemento_subjetivo
+-- - conceito_diferencial, sujeito_ativo, modificadoras, objeto_equiparado
 -- =====================================================

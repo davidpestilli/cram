@@ -271,7 +271,7 @@
           "id": "doc_equiparado_paraestatal",
           "titulo": "Documento de Entidade Paraestatal",
           "conteudo": "documento emanado de entidade paraestatal",
-          "tipo": "objeto_crime",
+          "tipo": "objeto_equiparado",
           "peso": 1,
           "ordem": 4
         },
@@ -279,7 +279,7 @@
           "id": "doc_equiparado_titulo",
           "titulo": "Título ao Portador",
           "conteudo": "título ao portador ou transmissível por endosso",
-          "tipo": "objeto_crime",
+          "tipo": "objeto_equiparado",
           "peso": 1,
           "ordem": 5
         },
@@ -287,7 +287,7 @@
           "id": "doc_equiparado_acoes",
           "titulo": "Ações de Sociedade Comercial",
           "conteudo": "ações de sociedade comercial, livros mercantis e testamento particular",
-          "tipo": "objeto_crime",
+          "tipo": "objeto_equiparado",
           "peso": 1,
           "ordem": 6
         },
@@ -334,7 +334,7 @@
           "id": "cartao_equiparacao",
           "titulo": "Equiparação de Cartões",
           "conteudo": "cartão de crédito ou débito equipara-se a documento particular",
-          "tipo": "objeto_crime",
+          "tipo": "objeto_equiparado",
           "peso": 1,
           "ordem": 3
         },
@@ -350,7 +350,7 @@
           "id": "falsidade_ideologica_finalidade",
           "titulo": "Finalidade da Falsidade Ideológica",
           "conteudo": "prejudicar direito, criar obrigação ou alterar verdade sobre fato juridicamente relevante",
-          "tipo": "conceito_base",
+          "tipo": "elemento_subjetivo",
           "peso": 2,
           "ordem": 5
         },
@@ -381,7 +381,7 @@
           "id": "falso_reconhecimento_condutas",
           "titulo": "Falso Reconhecimento de Firma",
           "conteudo": "reconhecer como verdadeira firma ou letra que não seja",
-          "tipo": "conduta_especifica",
+          "tipo": "crime_especifico",
           "peso": 2,
           "ordem": 1
         },
@@ -397,7 +397,7 @@
           "id": "certidao_falsa_condutas",
           "titulo": "Certidão ou Atestado Falso",
           "conteudo": "atestar ou certificar falsamente fato que habilite a cargo público ou vantagem",
-          "tipo": "conduta_especifica",
+          "tipo": "crime_especifico",
           "peso": 1,
           "ordem": 3
         },
@@ -413,7 +413,7 @@
           "id": "atestado_medico_falso",
           "titulo": "Atestado Médico Falso",
           "conteudo": "médico dar atestado falso no exercício da profissão",
-          "tipo": "conduta_especifica",
+          "tipo": "crime_especifico",
           "peso": 2,
           "ordem": 5
         },
@@ -437,7 +437,7 @@
           "id": "supressao_documento",
           "titulo": "Supressão de Documento",
           "conteudo": "destruir, suprimir ou ocultar documento de que não podia dispor",
-          "tipo": "conduta_especifica",
+          "tipo": "crime_especifico",
           "peso": 1,
           "ordem": 8
         },
@@ -531,7 +531,7 @@
           "id": "peculato_furto",
           "titulo": "Peculato-Furto",
           "conteudo": "funcionário sem posse que subtrai valendo-se da facilidade da função",
-          "tipo": "conduta_especifica",
+          "tipo": "modalidade_especifica",
           "peso": 2,
           "ordem": 3
         },
@@ -539,7 +539,7 @@
           "id": "peculato_culposo",
           "titulo": "Peculato Culposo",
           "conteudo": "concorrer culposamente para crime de outrem - detenção de 3 meses a 1 ano",
-          "tipo": "conduta_especifica",
+          "tipo": "modalidade_culposa",
           "peso": 1,
           "ordem": 4
         },
@@ -547,7 +547,7 @@
           "id": "peculato_reparacao",
           "titulo": "Reparação do Dano",
           "conteudo": "reparação antes da sentença extingue punibilidade no peculato culposo",
-          "tipo": "consequencia",
+          "tipo": "extincao_punibilidade",
           "peso": 2,
           "ordem": 5
         },
@@ -555,7 +555,7 @@
           "id": "apropriacao_erro",
           "titulo": "Apropriação por Erro",
           "conteudo": "apropriar-se de dinheiro recebido por erro de outrem no exercício do cargo",
-          "tipo": "conduta_especifica",
+          "tipo": "crime_especifico",
           "peso": 1,
           "ordem": 6
         },
@@ -563,7 +563,7 @@
           "id": "dados_falsos_sistema",
           "titulo": "Inserção de Dados Falsos",
           "conteudo": "inserir dados falsos em sistema informatizado da Administração",
-          "tipo": "conduta_especifica",
+          "tipo": "crime_informatico",
           "peso": 2,
           "ordem": 7
         },
@@ -571,7 +571,7 @@
           "id": "alteracao_sistema",
           "titulo": "Alteração de Sistema",
           "conteudo": "modificar sistema de informações sem autorização",
-          "tipo": "conduta_especifica",
+          "tipo": "crime_informatico",
           "peso": 1,
           "ordem": 8
         },
@@ -579,7 +579,7 @@
           "id": "extravio_documento",
           "titulo": "Extravio de Documento",
           "conteudo": "extraviar, sonegar ou inutilizar livro ou documento oficial",
-          "tipo": "conduta_especifica",
+          "tipo": "crime_especifico",
           "peso": 1,
           "ordem": 9
         },
@@ -587,7 +587,7 @@
           "id": "emprego_irregular_verbas",
           "titulo": "Emprego Irregular de Verbas",
           "conteudo": "dar aplicação diversa da legal a verbas públicas",
-          "tipo": "conduta_especifica",
+          "tipo": "crime_especifico",
           "peso": 1,
           "ordem": 10
         }
@@ -618,7 +618,7 @@
           "id": "excesso_exacao",
           "titulo": "Excesso de Exação",
           "conteudo": "exigir tributo indevido ou usar meio vexatório - reclusão de 3 a 8 anos e multa",
-          "tipo": "conduta_especifica",
+          "tipo": "modalidade_especifica",
           "peso": 2,
           "ordem": 3
         },
@@ -650,7 +650,7 @@
           "id": "corrupcao_passiva_privilegiada",
           "titulo": "Corrupção Passiva Privilegiada",
           "conteudo": "ceder a pedido ou influência sem vantagem - detenção de 3 meses a 1 ano ou multa",
-          "tipo": "conduta_especifica",
+          "tipo": "modalidade_privilegiada",
           "peso": 1,
           "ordem": 7
         },
@@ -674,7 +674,7 @@
           "id": "diferencas_conceituais",
           "titulo": "Diferenças entre Concussão e Corrupção",
           "conteudo": "concussão: funcionário EXIGE (mais grave) | corrupção passiva: funcionário SOLICITA/RECEBE | corrupção ativa: particular OFERECE",
-          "tipo": "conceito_base",
+          "tipo": "conceito_diferencial",
           "peso": 2,
           "ordem": 10
         }
@@ -705,7 +705,7 @@
           "id": "prevaricacao_elemento_subjetivo",
           "titulo": "Elemento Subjetivo da Prevaricação",
           "conteudo": "exige interesse ou sentimento pessoal do agente",
-          "tipo": "conceito_base",
+          "tipo": "elemento_subjetivo",
           "peso": 2,
           "ordem": 3
         },
@@ -713,7 +713,7 @@
           "id": "condescendencia_criminosa",
           "titulo": "Condescendência Criminosa",
           "conteudo": "não responsabilizar subordinado que cometeu infração no exercício do cargo",
-          "tipo": "conduta_especifica",
+          "tipo": "crime_especifico",
           "peso": 1,
           "ordem": 4
         },
@@ -721,7 +721,7 @@
           "id": "advocacia_administrativa",
           "titulo": "Advocacia Administrativa",
           "conteudo": "patrocinar interesse privado valendo-se da qualidade de funcionário",
-          "tipo": "conduta_especifica",
+          "tipo": "crime_especifico",
           "peso": 2,
           "ordem": 5
         },
@@ -737,7 +737,7 @@
           "id": "violencia_arbitraria",
           "titulo": "Violência Arbitrária",
           "conteudo": "praticar violência no exercício ou pretexto da função",
-          "tipo": "conduta_especifica",
+          "tipo": "crime_especifico",
           "peso": 1,
           "ordem": 7
         },
@@ -745,7 +745,7 @@
           "id": "abandono_funcao",
           "titulo": "Abandono de Função",
           "conteudo": "abandonar cargo fora dos casos legais",
-          "tipo": "conduta_especifica",
+          "tipo": "crime_especifico",
           "peso": 1,
           "ordem": 8
         },
@@ -761,7 +761,7 @@
           "id": "violacao_sigilo",
           "titulo": "Violação do Sigilo Funcional",
           "conteudo": "revelar fato sigiloso ou facilitar revelação",
-          "tipo": "conduta_especifica",
+          "tipo": "crime_especifico",
           "peso": 2,
           "ordem": 10
         },
@@ -808,7 +808,7 @@
           "id": "denunciacao_qualificadoras",
           "titulo": "Qualificadoras Denunciação",
           "conteudo": "anonimato: aumenta 1/6 | contravenção: diminui 1/2",
-          "tipo": "agravante",
+          "tipo": "modificadoras",
           "peso": 1,
           "ordem": 3
         },
@@ -824,7 +824,7 @@
           "id": "falso_testemunho_sujeitos",
           "titulo": "Sujeitos do Falso Testemunho",
           "conteudo": "testemunha, perito, contador, tradutor, intérprete",
-          "tipo": "conceito_base",
+          "tipo": "sujeito_ativo",
           "peso": 1,
           "ordem": 5
         },
@@ -848,7 +848,7 @@
           "id": "retratacao_falso_testemunho",
           "titulo": "Retratação no Falso Testemunho",
           "conteudo": "deixa de ser punível se retratar-se antes da sentença",
-          "tipo": "consequencia",
+          "tipo": "extincao_punibilidade",
           "peso": 2,
           "ordem": 8
         },
@@ -856,7 +856,7 @@
           "id": "corrupcao_testemunha",
           "titulo": "Corrupção de Testemunha",
           "conteudo": "dar, oferecer ou prometer vantagem para testemunha mentir",
-          "tipo": "conduta_especifica",
+          "tipo": "crime_especifico",
           "peso": 1,
           "ordem": 9
         },
@@ -864,7 +864,7 @@
           "id": "coacao_processo",
           "titulo": "Coação no Curso do Processo",
           "conteudo": "usar violência contra pessoa que intervém em processo",
-          "tipo": "conduta_especifica",
+          "tipo": "crime_especifico",
           "peso": 1,
           "ordem": 10
         },
@@ -872,7 +872,7 @@
           "id": "justica_proprias_maos",
           "titulo": "Exercício Arbitrário das Próprias Razões",
           "conteudo": "fazer justiça pelas próprias mãos para realizar ou assegurar pretensão",
-          "tipo": "conduta_especifica",
+          "tipo": "crime_especifico",
           "peso": 2,
           "ordem": 11
         },
@@ -880,7 +880,7 @@
           "id": "fraude_processual",
           "titulo": "Fraude Processual",
           "conteudo": "inovar artificiosamente estado de coisa para induzir erro judicial",
-          "tipo": "conduta_especifica",
+          "tipo": "crime_especifico",
           "peso": 2,
           "ordem": 12
         },

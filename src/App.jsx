@@ -19,7 +19,6 @@ const Shop = lazy(() => import('./pages/Shop'))
 const Inventory = lazy(() => import('./pages/Inventory'))
 const Profile = lazy(() => import('./pages/Profile'))
 const Achievements = lazy(() => import('./pages/Achievements'))
-import AITestPage from './pages/AITestPage'
 
 function App() {
   return (
@@ -34,7 +33,6 @@ function App() {
                 </div>
               }>
                 <Routes>
-                  <Route path="/ai-test" element={<AITestPage />} />
                   <Route path="/login" element={<Login />} />
                   <Route 
                     path="/profile-setup" 

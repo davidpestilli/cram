@@ -175,15 +175,6 @@ const Achievements = () => {
               </p>
             </div>
             
-            {/* Debug: Simulate Achievement (only in development) */}
-            {process.env.NODE_ENV === 'development' && (
-              <button
-                onClick={() => simulateAchievementUnlock(1)}
-                className="text-sm bg-purple-500 text-white px-3 py-1 rounded"
-              >
-                🧪 Simular Conquista
-              </button>
-            )}
           </div>
 
           {/* Progress Overview */}

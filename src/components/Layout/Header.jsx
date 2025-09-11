@@ -11,9 +11,11 @@ const Header = () => {
 
   const handleSignOut = async () => {
     try {
+      console.log('Header: SignOut button clicked')
       await signOut()
+      console.log('Header: SignOut completed')
     } catch (error) {
-      console.error('Error signing out:', error)
+      console.error('Header: Error signing out:', error)
     }
   }
 

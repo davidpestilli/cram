@@ -1,8 +1,16 @@
+import { useState } from 'react'
 import Layout from '../components/Layout/Layout'
 import { useAuth } from '../contexts/AuthContext'
+import { useNavigate } from 'react-router-dom'
 
 const Profile = () => {
-  const { profile } = useAuth()
+  const { profile, resetProgressData, deleteAllCramData, signOut } = useAuth()
+  const navigate = useNavigate()
+  
+  const [showDangerZone, setShowDangerZone] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [confirmText, setConfirmText] = useState('')
+  const [activeConfirmation, setActiveConfirmation] = useState(null)
 
   const getXpForNextLevel = (level) => {
     return level * 1000
@@ -27,6 +35,61 @@ const Profile = () => {
       procurador: { name: 'Procurador', bonus: '+15% Direito Administrativo', icon: '🏛️' }
     }
     return classes[className] || classes.estudante
+  }
+
+  const handleResetProgress = async () => {
+    if (confirmText !== 'RESETAR PROGRESSO') {
+      alert('Digite exatamente "RESETAR PROGRESSO" para confirmar')
+      return
+    }
+
+    setIsLoading(true)
+    try {
+      const result = await resetProgressData()
+      if (result.success) {
+        alert('Progresso resetado com sucesso! Você voltou ao nível 1.')
+        setActiveConfirmation(null)
+        setConfirmText('')
+      } else {
+        alert('Erro ao resetar progresso. Tente novamente.')
+      }
+    } catch (error) {
+      alert('Erro inesperado. Tente novamente.')
+    }
+    setIsLoading(false)
+  }
+
+  const handleDeleteAccount = async () => {
+    if (confirmText !== 'EXCLUIR CONTA CRAM') {
+      alert('Digite exatamente "EXCLUIR CONTA CRAM" para confirmar')
+      return
+    }
+
+    setIsLoading(true)
+    try {
+      const result = await deleteAllCramData()
+      if (result.success) {
+        alert('Conta do CRAM excluída com sucesso! Você será deslogado.')
+        // Fazer logout completo para evitar conflito com ProtectedRoute
+        await signOut()
+        // O ProtectedRoute automaticamente redirecionará para /login
+      } else {
+        alert('Erro ao excluir conta. Tente novamente.')
+      }
+    } catch (error) {
+      alert('Erro inesperado. Tente novamente.')
+    }
+    setIsLoading(false)
+  }
+
+  const openConfirmation = (action) => {
+    setActiveConfirmation(action)
+    setConfirmText('')
+  }
+
+  const closeConfirmation = () => {
+    setActiveConfirmation(null)
+    setConfirmText('')
   }
 
   if (!profile) {
@@ -229,9 +292,134 @@ const Profile = () => {
                   </div>
                 </div>
               </div>
+
+              {/* Danger Zone */}
+              <div className="card border-red-200">
+                <div className="p-4 bg-red-50 border-b border-red-200">
+                  <button
+                    onClick={() => setShowDangerZone(!showDangerZone)}
+                    className="flex items-center justify-between w-full text-left"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <span className="text-xl">⚠️</span>
+                      <h3 className="text-lg font-semibold text-red-800">
+                        Zona de Perigo
+                      </h3>
+                    </div>
+                    <span className="text-red-600">
+                      {showDangerZone ? '−' : '+'}
+                    </span>
+                  </button>
+                </div>
+
+                {showDangerZone && (
+                  <div className="p-6 space-y-4">
+                    <p className="text-sm text-gray-600 mb-6">
+                      ⚠️ <strong>Atenção:</strong> As ações abaixo são irreversíveis. Use com cuidado.
+                    </p>
+
+                    {/* Reset Progress */}
+                    <div className="border border-yellow-200 rounded-lg p-4 bg-yellow-50">
+                      <h4 className="font-semibold text-yellow-800 mb-2">
+                        🔄 Resetar Progresso de Estudos
+                      </h4>
+                      <p className="text-sm text-yellow-700 mb-3">
+                        Remove todas as questões respondidas, conquistas, XP e gold. 
+                        Mantém username e configurações do avatar.
+                      </p>
+                      <button
+                        onClick={() => openConfirmation('reset')}
+                        className="btn-secondary bg-yellow-600 hover:bg-yellow-700 text-white"
+                      >
+                        Resetar Progresso
+                      </button>
+                    </div>
+
+                    {/* Delete Account */}
+                    <div className="border border-red-200 rounded-lg p-4 bg-red-50">
+                      <h4 className="font-semibold text-red-800 mb-2">
+                        🗑️ Excluir Conta do CRAM
+                      </h4>
+                      <p className="text-sm text-red-700 mb-3">
+                        Remove TODOS os dados do CRAM (perfil, progresso, configurações). 
+                        Você será deslogado e pode recriar sua conta quando quiser.
+                      </p>
+                      <button
+                        onClick={() => openConfirmation('delete')}
+                        className="btn-secondary bg-red-600 hover:bg-red-700 text-white"
+                      >
+                        Excluir Conta do CRAM
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
+
+        {/* Confirmation Modal */}
+        {activeConfirmation && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg max-w-md w-full p-6">
+              <h3 className="text-lg font-semibold mb-4">
+                {activeConfirmation === 'reset' ? '🔄 Confirmar Reset de Progresso' : '🗑️ Confirmar Exclusão da Conta'}
+              </h3>
+              
+              <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm text-red-700 mb-2">
+                  <strong>⚠️ Esta ação é IRREVERSÍVEL!</strong>
+                </p>
+                <p className="text-sm text-red-600">
+                  {activeConfirmation === 'reset' 
+                    ? 'Todos os seus dados de progresso (XP, gold, questões respondidas, conquistas) serão permanentemente removidos.'
+                    : 'Todos os seus dados do CRAM serão permanentemente removidos. Você será deslogado e pode recriar sua conta quando quiser.'
+                  }
+                </p>
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Para confirmar, digite exatamente:
+                </label>
+                <div className="bg-gray-100 p-2 rounded text-sm font-mono mb-2">
+                  {activeConfirmation === 'reset' ? 'RESETAR PROGRESSO' : 'EXCLUIR CONTA CRAM'}
+                </div>
+                <input
+                  type="text"
+                  value={confirmText}
+                  onChange={(e) => setConfirmText(e.target.value)}
+                  className="input"
+                  placeholder="Digite a confirmação aqui..."
+                  disabled={isLoading}
+                />
+              </div>
+
+              <div className="flex space-x-3">
+                <button
+                  onClick={closeConfirmation}
+                  className="flex-1 btn-secondary"
+                  disabled={isLoading}
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={activeConfirmation === 'reset' ? handleResetProgress : handleDeleteAccount}
+                  className={`flex-1 text-white ${
+                    activeConfirmation === 'reset' 
+                      ? 'bg-yellow-600 hover:bg-yellow-700' 
+                      : 'bg-red-600 hover:bg-red-700'
+                  } px-4 py-2 rounded-md font-medium disabled:opacity-50 disabled:cursor-not-allowed`}
+                  disabled={isLoading || !confirmText}
+                >
+                  {isLoading ? 'Processando...' : (
+                    activeConfirmation === 'reset' ? 'Resetar Progresso' : 'Excluir Conta'
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </Layout>
   )

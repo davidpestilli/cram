@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useNavigate } from 'react-router-dom'
 
@@ -9,11 +9,27 @@ const ProfileSetup = () => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   
-  const { createProfile, profile } = useAuth()
+  const { createProfile, profile, user } = useAuth()
   const navigate = useNavigate()
 
-  // Redirect if profile already exists
-  if (profile) {
+  // Definir username padrão baseado no email do usuário
+  useEffect(() => {
+    if (user?.email && !username) {
+      const defaultUsername = user.email.split('@')[0]
+      setUsername(defaultUsername)
+    }
+  }, [user, username])
+
+  // Redirect if profile already exists and is not temporary
+  console.log('ProfileSetup: Checking redirect conditions', {
+    hasProfile: !!profile,
+    isTemporary: profile?.is_temporary,
+    username: profile?.username,
+    shouldRedirect: profile && !profile.is_temporary
+  })
+  
+  if (profile && !profile.is_temporary) {
+    console.log('ProfileSetup: Redirecting to dashboard - profile exists and is not temporary')
     navigate('/dashboard', { replace: true })
     return null
   }
@@ -65,10 +81,10 @@ const ProfileSetup = () => {
             CRAM
           </h1>
           <h2 className="text-2xl font-bold text-gray-900">
-            Configure seu Perfil
+            Bem-vindo ao CRAM!
           </h2>
           <p className="text-gray-600 mt-2">
-            Personalize seu avatar para começar sua jornada
+            Configure seu perfil para começar sua jornada de estudos jurídicos
           </p>
         </div>
 

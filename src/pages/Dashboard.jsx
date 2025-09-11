@@ -40,14 +40,8 @@ const Dashboard = () => {
               </p>
             </div>
             
-            {/* Help Actions & AI Test Link */}
+            {/* Help Actions */}
             <div className="flex items-center space-x-2">
-              <Link 
-                to="/ai-test"
-                className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-md font-semibold transition-colors"
-              >
-                🧪 Teste IA
-              </Link>
               <HelpSystem 
                 helpText="Clique aqui para ver as perguntas mais frequentes"
                 position="bottom"
