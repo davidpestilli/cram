@@ -1,8 +1,9 @@
 import { supabase } from '../lib/supabase'
 import { generateQuestions } from './deepseekApi'
-import { generateQuestionsProgressively } from './directAIService'
+import { generateQuestionsProgressively, resetGlobalQuestionCounter } from './directAIService'
 import questionDeduplicationService from './questionDeduplicationService'
 import direitoPenalEstruturado from '../data/direito_penal_estruturado.json'
+import SubsectionDistributionService from './subsectionDistributionService'
 
 console.log('🔄 QuestionsService carregado com import estático:', !!direitoPenalEstruturado)
 
@@ -14,6 +15,13 @@ export class QuestionsService {
     try {
       const { userId, questionType = 'auto', forceNew = false } = options
       
+      // Controle anti-concorrência
+      const lockKey = `${subjectId}-${sectionId}-${questionType}`
+      if (generationLocks.has(lockKey)) {
+        console.log(`🔒 Geração já em andamento para ${lockKey}, aguardando...`)
+        return await generationLocks.get(lockKey)
+      }
+      
       if (questionType === 'answered' && userId) {
         return await this.getAnsweredQuestions(userId, subjectId, sectionId)
       }
@@ -22,30 +30,45 @@ export class QuestionsService {
         return await this.getUnansweredQuestions(userId, subjectId, sectionId)
       }
       
-      if (questionType === 'new' || forceNew) {
-        return await this.generateNewQuestions(subjectId, sectionId)
-      }
+      // Criar promise para controle de concorrência
+      const generationPromise = this.executeGeneration(subjectId, sectionId, options)
+      generationLocks.set(lockKey, generationPromise)
       
-      // Comportamento automático (padrão)
-      if (!forceNew) {
-        const existingQuestions = await this.getExistingQuestions(subjectId, sectionId)
-        if (existingQuestions.length > 0) {
-          console.log(`Found ${existingQuestions.length} existing questions for section ${sectionId}`)
-          return {
-            questions: existingQuestions,
-            source: 'database',
-            created: false
-          }
-        }
+      try {
+        const result = await generationPromise
+        return result
+      } finally {
+        generationLocks.delete(lockKey)
       }
-
-      // Fallback: gerar novas questões
-      return await this.generateNewQuestions(subjectId, sectionId)
 
     } catch (error) {
       console.error('Error in getOrCreateQuestions:', error)
       throw error
     }
+  }
+
+  static async executeGeneration(subjectId, sectionId, options = {}) {
+    const { userId, questionType = 'auto', forceNew = false } = options
+
+    if (questionType === 'new' || forceNew) {
+      return await this.generateBalancedQuestions(subjectId, sectionId, 10)
+    }
+    
+    // Comportamento automático (padrão)
+    if (!forceNew) {
+      const existingQuestions = await this.getExistingQuestions(subjectId, sectionId)
+      if (existingQuestions.length > 0) {
+        console.log(`Found ${existingQuestions.length} existing questions for section ${sectionId}`)
+        return {
+          questions: existingQuestions,
+          source: 'database',
+          created: false
+        }
+      }
+    }
+
+    // Fallback: geração equilibrada
+    return await this.generateBalancedQuestions(subjectId, sectionId, 10)
   }
 
   static async getExistingQuestions(subjectId, sectionId) {
@@ -190,7 +213,9 @@ export class QuestionsService {
         // Novos campos de embeddings
         embedding: q.embedding || null,
         semantic_hash: q.semantic_hash || null,
-        content_categories: q.content_categories || []
+        content_categories: q.content_categories || [],
+        // Campo de subseção para distribuição equilibrada
+        subsection_id: q.subsection_id || null
       }))
 
       // Inserir no banco
@@ -595,6 +620,381 @@ export class QuestionsService {
         canGenerateNew: true
       }
     }
+  }
+
+  // =====================================================
+  // MÉTODOS PARA DISTRIBUIÇÃO EQUILIBRADA POR SUBSEÇÕES
+  // =====================================================
+
+  /**
+   * Gerar questões usando distribuição equilibrada por subseções
+   * @param {number} subjectId - ID da matéria
+   * @param {number} sectionId - ID da seção
+   * @param {number} totalQuestions - Total de questões a gerar
+   * @returns {Promise<Object>} Resultado da geração equilibrada
+   */
+  static async generateBalancedQuestions(subjectId, sectionId, totalQuestions = 10) {
+    try {
+      console.log(`🎯 Iniciando geração equilibrada: ${totalQuestions} questões para seção ${sectionId}`)
+
+      // Controle anti-concorrência específico para geração equilibrada
+      const balancedLockKey = `balanced-${subjectId}-${sectionId}-${totalQuestions}`
+      if (generationLocks.has(balancedLockKey)) {
+        console.log(`🔒 Geração equilibrada já em andamento para seção ${sectionId}, aguardando...`)
+        return await generationLocks.get(balancedLockKey)
+      }
+
+      const balancedPromise = this.executeBalancedGeneration(subjectId, sectionId, totalQuestions)
+      generationLocks.set(balancedLockKey, balancedPromise)
+      
+      try {
+        const result = await balancedPromise
+        return result
+      } finally {
+        generationLocks.delete(balancedLockKey)
+      }
+
+    } catch (error) {
+      console.error('❌ Erro na geração equilibrada:', error)
+      throw error
+    }
+  }
+
+  static async executeBalancedGeneration(subjectId, sectionId, totalQuestions = 10) {
+    // Resetar contador global para manter distribuição 3F+2V e 3P+2T correta
+    resetGlobalQuestionCounter()
+    
+    // Obter plano de distribuição com geração contínua permitida
+    const generationPlan = await SubsectionDistributionService.planQuestionGeneration(
+      sectionId, 
+      totalQuestions, 
+      true // allowContinuous = true
+    )
+    
+    if (generationPlan.length === 0) {
+      console.log('✅ Nenhuma subseção encontrada para geração')
+      return {
+        questions: [],
+        source: 'balanced_generation',
+        created: false,
+        message: 'Nenhuma subseção disponível para geração'
+      }
+    }
+
+    console.log(`📋 Plano de geração:`, generationPlan.map(p => 
+      `${p.titulo}: ${p.questionsToGenerate} questões`
+    ).join(', '))
+
+    // Gerar questões para cada subseção no plano
+    const allGeneratedQuestions = []
+    const generationResults = []
+
+    for (const subsectionPlan of generationPlan) {
+      console.log(`🎯 Gerando ${subsectionPlan.questionsToGenerate} questões para: ${subsectionPlan.titulo}`)
+      
+      try {
+        const subsectionQuestions = await this.generateQuestionsForSubsection(
+          subjectId, 
+          sectionId, 
+          subsectionPlan, 
+          subsectionPlan.questionsToGenerate
+        )
+
+        if (subsectionQuestions && subsectionQuestions.length > 0) {
+          allGeneratedQuestions.push(...subsectionQuestions)
+          generationResults.push({
+            subsectionId: subsectionPlan.subsectionId,
+            titulo: subsectionPlan.titulo,
+            requested: subsectionPlan.questionsToGenerate,
+            generated: subsectionQuestions.length
+          })
+        }
+      } catch (subsectionError) {
+        console.error(`❌ Erro gerando questões para ${subsectionPlan.titulo}:`, subsectionError)
+        generationResults.push({
+          subsectionId: subsectionPlan.subsectionId,
+          titulo: subsectionPlan.titulo,
+          requested: subsectionPlan.questionsToGenerate,
+          generated: 0,
+          error: subsectionError.message
+        })
+      }
+    }
+
+    console.log(`✅ Geração equilibrada concluída: ${allGeneratedQuestions.length} questões geradas`)
+    console.log(`📊 Resultados por subseção:`, generationResults)
+
+    return {
+      questions: allGeneratedQuestions,
+      source: 'balanced_generation',
+      created: true,
+      generationPlan,
+      results: generationResults,
+      totalGenerated: allGeneratedQuestions.length
+    }
+  }
+
+  /**
+   * Gerar questões específicas para uma subseção
+   * @param {number} subjectId - ID da matéria
+   * @param {number} sectionId - ID da seção
+   * @param {Object} subsectionPlan - Dados da subseção
+   * @param {number} questionsCount - Quantidade a gerar
+   * @returns {Promise<Array>} Lista de questões geradas
+   */
+  static async generateQuestionsForSubsection(subjectId, sectionId, subsectionPlan, questionsCount) {
+    try {
+      // Buscar conteúdo da seção
+      const sectionContent = await this.getSectionContent(sectionId)
+      if (!sectionContent) {
+        throw new Error(`Conteúdo da seção ${sectionId} não encontrado`)
+      }
+
+      // Criar prompt específico para a subseção
+      const subsectionPrompt = this.buildSubsectionPrompt(subsectionPlan, sectionContent, questionsCount)
+
+      // Gerar questões usando o serviço de IA
+      const generatedResult = await generateQuestionsProgressively({
+        sectionContent: {
+          ...sectionContent,
+          // Focar no conteúdo específico da subseção
+          foco_subsecao: {
+            titulo: subsectionPlan.titulo,
+            conteudo: subsectionPlan.conteudo,
+            tipo: subsectionPlan.tipo
+          }
+        },
+        customPrompt: subsectionPrompt,
+        targetCount: questionsCount,
+        subjectId,
+        sectionId
+      })
+
+      // Extrair questões do resultado
+      const generatedQuestions = generatedResult?.questions || []
+      
+      if (generatedQuestions.length === 0) {
+        console.warn(`⚠️ Nenhuma questão gerada para subseção: ${subsectionPlan.titulo}`)
+        return []
+      }
+
+      // Marcar questões com subsection_id
+      const questionsWithSubsection = generatedQuestions.map(question => ({
+        ...question,
+        subsection_id: subsectionPlan.subsectionId
+      }))
+
+      // Salvar questões no banco
+      await this.saveQuestions(questionsWithSubsection, subjectId, sectionId, sectionContent)
+
+      console.log(`✅ ${questionsWithSubsection.length} questões geradas para subseção: ${subsectionPlan.titulo}`)
+      
+      return questionsWithSubsection
+
+    } catch (error) {
+      console.error(`❌ Erro gerando questões para subseção ${subsectionPlan.titulo}:`, error)
+      throw error
+    }
+  }
+
+  /**
+   * Construir prompt específico para uma subseção
+   * @param {Object} subsectionPlan - Dados da subseção
+   * @param {Object} sectionContent - Conteúdo completo da seção
+   * @param {number} questionsCount - Quantidade a gerar
+   * @returns {string} Prompt personalizado
+   */
+  static buildSubsectionPrompt(subsectionPlan, sectionContent, questionsCount) {
+    const baseInfo = `
+Seção: ${sectionContent.titulo}
+Artigo: ${sectionContent.artigo}
+Foco específico: ${subsectionPlan.titulo}
+Conteúdo específico: ${subsectionPlan.conteudo}
+Tipo de conteúdo: ${subsectionPlan.tipo}
+`
+
+    let specificInstructions = ''
+
+    switch (subsectionPlan.tipo) {
+      case 'conceito_base':
+        specificInstructions = `
+FOQUE EM: Conceitos fundamentais e definições.
+- Teste entendimento de tipificação e elementos do crime
+- Explore modalidades de conduta (fabricar vs alterar)
+- Questione sobre requisitos legais básicos
+`
+        break
+
+      case 'objeto_crime':
+        // Expandir contexto para objetos com conteúdo simples
+        const expandedContext = this.expandObjectContext(subsectionPlan.conteudo, sectionContent)
+        specificInstructions = `
+FOQUE EM: Objetos protegidos pela lei - ${subsectionPlan.titulo}
+- Teste identificação específica e diferenciação deste objeto
+- Explore características legais que tornam este objeto protegido
+- Questione sobre diferenças em relação a outros documentos/objetos
+- ${expandedContext}
+`
+        break
+
+      case 'consequencia':
+        specificInstructions = `
+FOQUE EM: Penalidades e consequências jurídicas.
+- Teste conhecimento das penas aplicáveis
+- Explore regime de cumprimento e dosimetria
+- Questione sobre agravantes e atenuantes
+`
+        break
+
+      case 'conduta_equiparada':
+        specificInstructions = `
+FOQUE EM: Condutas equiparadas ao crime principal.
+- Teste entendimento das condutas específicas: ${subsectionPlan.conteudo}
+- Explore diferenças de pena entre condutas
+- Questione sobre elementos distintivos
+`
+        break
+
+      case 'conduta_especifica':
+        specificInstructions = `
+FOQUE EM: Conduta específica e seus requisitos.
+- Teste elementos específicos da conduta: ${subsectionPlan.conteudo}
+- Explore requisitos subjetivos e objetivos
+- Questione sobre situações limite
+`
+        break
+
+      case 'crime_preparatorio':
+        specificInstructions = `
+FOQUE EM: Atos preparatórios e sua punição.
+- Teste entendimento de perigo abstrato
+- Explore diferença entre preparação e tentativa
+- Questione sobre objetos especialmente destinados
+`
+        break
+
+      case 'agravante':
+        specificInstructions = `
+FOQUE EM: Circunstâncias agravantes.
+- Teste aplicação da agravante: ${subsectionPlan.conteudo}
+- Explore requisitos para caracterização
+- Questione sobre cálculo de aumento de pena
+`
+        break
+
+      default:
+        specificInstructions = `
+FOQUE EM: ${subsectionPlan.titulo}
+- Explore o conteúdo: ${subsectionPlan.conteudo}
+- Teste compreensão específica deste aspecto
+`
+    }
+
+    return `${baseInfo}
+
+${specificInstructions}
+
+INSTRUÇÕES ESPECÍFICAS:
+- Gere EXATAMENTE ${questionsCount} questão(ões) focada(s) ESPECIFICAMENTE em: ${subsectionPlan.titulo}
+- Todas as questões devem ser VERDADEIRO/FALSO
+- VARIE os aspectos dentro desta subseção específica
+- EVITE repetir conceitos óbvios ou genéricos
+- Teste conhecimento ESPECÍFICO e DIFERENCIADO deste aspecto
+- Contextualize dentro do artigo ${sectionContent.artigo} do Código Penal
+`
+  }
+
+  /**
+   * Expandir contexto para objetos com conteúdo muito simples
+   * @param {string} content - Conteúdo da subseção
+   * @param {Object} sectionContent - Conteúdo completo da seção
+   * @returns {string} Contexto expandido
+   */
+  static expandObjectContext(content, sectionContent) {
+    // Se o conteúdo é muito simples (poucas palavras), expandir contexto
+    const wordCount = content.trim().split(/\s+/).length
+    
+    if (wordCount <= 3) {
+      // Contexto expandido para objetos simples
+      const contextualHints = {
+        'vale postal': 'Explore aspectos específicos: quem emite, finalidade, diferença de outros valores, âmbito de proteção',
+        'papel selado': 'Foque em: diferença de outros papéis, função tributária, forma de identificação',
+        'selo': 'Aborde: função específica, órgão emissor, diferenciação de outros selos',
+        'documento': 'Teste: caracterização específica, diferença de outros documentos, elementos essenciais'
+      }
+      
+      // Buscar por palavras-chave no conteúdo
+      for (const [keyword, hint] of Object.entries(contextualHints)) {
+        if (content.toLowerCase().includes(keyword)) {
+          return `CONTEXTO ESPECÍFICO: ${hint}`
+        }
+      }
+      
+      // Contexto genérico para objetos simples
+      return 'CONTEXTO: Teste elementos distintivos, características específicas e âmbito de proteção legal'
+    }
+    
+    // Para conteúdo mais detalhado, usar o próprio conteúdo
+    return `CONTEXTO: Baseie-se nos elementos específicos: ${content}`
+  }
+
+  /**
+   * Obter relatório de distribuição atual de uma seção
+   * @param {number} sectionId - ID da seção
+   * @returns {Promise<Object>} Relatório detalhado da distribuição
+   */
+  static async getDistributionReport(sectionId) {
+    try {
+      const summary = await SubsectionDistributionService.getDistributionSummary(sectionId)
+      
+      return {
+        ...summary,
+        recommendations: this.generateRecommendations(summary)
+      }
+    } catch (error) {
+      console.error('Erro ao gerar relatório de distribuição:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Gerar recomendações baseadas na distribuição atual
+   * @param {Object} summary - Resumo da distribuição
+   * @returns {Array} Lista de recomendações
+   */
+  static generateRecommendations(summary) {
+    const recommendations = []
+
+    if (summary.totalDeficit > 0) {
+      recommendations.push({
+        type: 'generate',
+        priority: 'high',
+        message: `Gerar ${summary.totalDeficit} questões para equilibrar a seção`,
+        action: 'generateBalancedQuestions',
+        params: { questionsCount: summary.totalDeficit }
+      })
+    }
+
+    if (summary.balancePercentage < 70) {
+      recommendations.push({
+        type: 'rebalance',
+        priority: 'medium',
+        message: 'Distribuição muito desequilibrada (< 70%)',
+        action: 'reviewDistribution'
+      })
+    }
+
+    if (summary.mostOverrepresented && summary.mostOverrepresented.deviationFromTarget > 3) {
+      recommendations.push({
+        type: 'reduce',
+        priority: 'low',
+        message: `Subseção "${summary.mostOverrepresented.titulo}" está sobre-representada`,
+        action: 'considerRemoval',
+        subsection: summary.mostOverrepresented.subsectionId
+      })
+    }
+
+    return recommendations
   }
 }
 

@@ -82,8 +82,27 @@ RESPONDA APENAS JSON:
   return question
 }
 
+// Contador global para manter distribuição 3F+2V e 3P+2T ao longo de múltiplas subseções
+let globalQuestionCounter = 0
+
 // Função para gerar questões progressivamente com análise semântica
-export const generateQuestionsProgressively = async (sectionContent, count = 5, onProgress = null, subjectId = 1, sectionId = 1) => {
+export const generateQuestionsProgressively = async (options) => {
+  // Suporte tanto para chamada com objeto quanto parâmetros individuais
+  let sectionContent, count, onProgress, subjectId, sectionId, customPrompt, startFromGlobalCounter
+  
+  if (typeof options === 'object' && options.sectionContent) {
+    // Nova assinatura (objeto)
+    ({ sectionContent, targetCount: count = 5, onProgress = null, subjectId = 1, sectionId = 1, customPrompt, startFromGlobalCounter = true } = options)
+  } else {
+    // Assinatura antiga (parâmetros individuais) para compatibilidade
+    sectionContent = arguments[0]
+    count = arguments[1] || 5
+    onProgress = arguments[2] || null
+    subjectId = arguments[3] || 1
+    sectionId = arguments[4] || 1
+    startFromGlobalCounter = false
+  }
+  
   console.log(`🚀 [PROGRESSIVO INTELIGENTE] Gerando ${count} questões para: ${sectionContent?.titulo || 'N/A'}`)
   
   if (!API_KEY) {
@@ -108,13 +127,16 @@ export const generateQuestionsProgressively = async (sectionContent, count = 5, 
   // Gerar questões uma por vez com orientação inteligente
   for (let i = 1; i <= count; i++) {
     try {
-      console.log(`📝 Gerando questão ${i}/${count} com orientação semântica...`)
+      // Usar contador global ou local dependendo da configuração
+      const questionNumber = startFromGlobalCounter ? (++globalQuestionCounter) : i
+      console.log(`📝 Gerando questão ${i}/${count} com orientação semântica... (Posição global: ${questionNumber})`)
       
       const question = await generateSingleQuestionIntelligent(
         sectionContent, 
-        i, 
+        questionNumber, 
         semanticAnalysis, 
-        generatedEmbeddings
+        generatedEmbeddings,
+        customPrompt
       )
       
       // Verificação em tempo real
@@ -183,6 +205,14 @@ export const generateQuestionsProgressively = async (sectionContent, count = 5, 
   }
 
   console.log(`🎯 Processo concluído: ${questions.length}/${count} questões geradas`)
+  
+  // Log da distribuição de questões
+  if (startFromGlobalCounter && questions.length > 0) {
+    const trueCount = questions.filter(q => q.correct_answer === true).length
+    const falseCount = questions.filter(q => q.correct_answer === false).length
+    console.log(`📊 Distribuição V/F desta batch: ${trueCount}V + ${falseCount}F | Contador global atual: ${globalQuestionCounter}`)
+  }
+  
   if (errors.length > 0) {
     console.warn(`⚠️ Erros encontrados:`, errors)
   }
@@ -194,6 +224,15 @@ export const generateQuestionsProgressively = async (sectionContent, count = 5, 
     totalRequested: count
   }
 }
+
+// Função para resetar o contador global de questões
+export const resetGlobalQuestionCounter = () => {
+  console.log(`🔄 Resetando contador global de questões (estava em ${globalQuestionCounter})`)
+  globalQuestionCounter = 0
+}
+
+// Função para obter o contador atual (para debugging)
+export const getGlobalQuestionCounter = () => globalQuestionCounter
 
 // Manter a função original como fallback
 export const generateQuestionsDirectly = async (sectionContent, count = 5) => {
@@ -290,6 +329,9 @@ RESPONDA APENAS JSON VÁLIDO:
 // Distribuição 3F+2V: questões 1, 3, 5 = false | questões 2, 4 = true
 // Distribuição por tipo: questões 1, 2 = teóricas | questões 3, 4, 5 = práticas
 const getQuestionConfig = (questionNumber) => {
+  // Normalizar para ciclo de 5 questões (1-5, 6-10, 11-15, etc.)
+  const normalizedNumber = ((questionNumber - 1) % 5) + 1
+  
   const configs = [
     { 
       id: 1, 
@@ -322,7 +364,7 @@ const getQuestionConfig = (questionNumber) => {
       focus: "QUESTÃO PRÁTICA FALSA: Crie uma história que PARECE ser crime mas NÃO é (ex: Ana imitou assinatura da irmã com autorização, documento privado vs público)" 
     }
   ]
-  return configs[questionNumber - 1] || configs[0]
+  return configs[normalizedNumber - 1] || configs[0]
 }
 
 const getQuestionFocus = (questionNumber) => {
@@ -595,13 +637,20 @@ const fixMalformedJSON = (jsonStr) => {
 
 // Funções auxiliares para geração inteligente
 
-async function generateSingleQuestionIntelligent(sectionContent, questionNumber, semanticAnalysis, generatedEmbeddings) {
-  // Criar prompt com orientação semântica
-  const guidedPrompt = await semanticAnalysisService.generateGuidedPrompt(
-    '',
-    sectionContent,
-    semanticAnalysis
-  )
+async function generateSingleQuestionIntelligent(sectionContent, questionNumber, semanticAnalysis, generatedEmbeddings, customPrompt = null) {
+  let guidedPrompt
+  
+  if (customPrompt) {
+    // Usar prompt personalizado quando fornecido
+    guidedPrompt = customPrompt
+  } else {
+    // Criar prompt com orientação semântica padrão
+    guidedPrompt = await semanticAnalysisService.generateGuidedPrompt(
+      '',
+      sectionContent,
+      semanticAnalysis
+    )
+  }
 
   // Usar a função original com prompt guiado
   const questionConfig = getQuestionConfig(questionNumber)

@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase'
 
 class SemanticAnalysisService {
   constructor() {
-    this.clusterThreshold = 0.8
+    this.clusterThreshold = 0.7  // Reduzido de 0.8 para 0.7 (muito alto estava impedindo clusters)
     this.diversityThreshold = 0.6
   }
 
@@ -82,11 +82,28 @@ class SemanticAnalysisService {
   async identifySemanticClusters(questions) {
     const clusters = []
     const processed = new Set()
+    let maxSimilarity = 0
+    let similarityCount = 0
+    let validEmbeddings = 0
 
-    for (let i = 0; i < questions.length; i++) {
+    // Verificar se há embeddings válidos
+    const questionsWithEmbeddings = questions.filter(q => {
+      const hasValidEmbedding = q.embedding && Array.isArray(q.embedding) && q.embedding.length > 0
+      if (hasValidEmbedding) validEmbeddings++
+      return hasValidEmbedding
+    })
+
+    console.log(`📊 Debug clustering: ${questions.length} questões total, ${validEmbeddings} com embeddings válidos`)
+
+    if (validEmbeddings < 2) {
+      console.log(`⚠️ Poucos embeddings válidos (${validEmbeddings}) - não é possível formar clusters`)
+      return clusters
+    }
+
+    for (let i = 0; i < questionsWithEmbeddings.length; i++) {
       if (processed.has(i)) continue
 
-      const question = questions[i]
+      const question = questionsWithEmbeddings[i]
       const cluster = {
         centroid: question,
         members: [question],
@@ -95,16 +112,19 @@ class SemanticAnalysisService {
       }
 
       // Encontrar questões similares
-      for (let j = i + 1; j < questions.length; j++) {
+      for (let j = i + 1; j < questionsWithEmbeddings.length; j++) {
         if (processed.has(j)) continue
 
         const similarity = embeddingsService.calculateSimilarity(
           question.embedding,
-          questions[j].embedding
+          questionsWithEmbeddings[j].embedding
         )
 
+        similarityCount++
+        maxSimilarity = Math.max(maxSimilarity, similarity)
+
         if (similarity > this.clusterThreshold) {
-          cluster.members.push(questions[j])
+          cluster.members.push(questionsWithEmbeddings[j])
           processed.add(j)
         }
       }
@@ -112,6 +132,7 @@ class SemanticAnalysisService {
       if (cluster.members.length > 1) {
         cluster.avgSimilarity = this.calculateClusterSimilarity(cluster.members)
         clusters.push(cluster)
+        console.log(`✅ Cluster criado: ${cluster.members.length} membros, similaridade média: ${cluster.avgSimilarity.toFixed(3)}`)
       }
 
       processed.add(i)
@@ -121,6 +142,11 @@ class SemanticAnalysisService {
     clusters.sort((a, b) => b.members.length - a.members.length)
 
     console.log(`🎯 Identificados ${clusters.length} clusters semânticos`)
+    console.log(`📊 Debug: ${similarityCount} comparações, similaridade máxima: ${maxSimilarity.toFixed(3)}, threshold: ${this.clusterThreshold}`)
+    
+    if (clusters.length === 0 && maxSimilarity < this.clusterThreshold) {
+      console.log(`💡 Sugestão: Threshold muito alto (${this.clusterThreshold}), máxima similaridade encontrada: ${maxSimilarity.toFixed(3)}`)
+    }
     
     return clusters
   }
