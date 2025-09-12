@@ -21,18 +21,19 @@ const ProfileSetup = () => {
   }, [user, username])
 
   // Redirect if profile already exists and is not temporary
-  console.log('ProfileSetup: Checking redirect conditions', {
-    hasProfile: !!profile,
-    isTemporary: profile?.is_temporary,
-    username: profile?.username,
-    shouldRedirect: profile && !profile.is_temporary
-  })
-  
-  if (profile && !profile.is_temporary) {
-    console.log('ProfileSetup: Redirecting to dashboard - profile exists and is not temporary')
-    navigate('/dashboard', { replace: true })
-    return null
-  }
+  useEffect(() => {
+    console.log('ProfileSetup: Checking redirect conditions', {
+      hasProfile: !!profile,
+      isTemporary: profile?.is_temporary,
+      username: profile?.username,
+      shouldRedirect: profile && !profile.is_temporary
+    })
+    
+    if (profile && !profile.is_temporary) {
+      console.log('ProfileSetup: Redirecting to dashboard - profile exists and is not temporary')
+      navigate('/dashboard', { replace: true })
+    }
+  }, [profile, navigate])
 
   const avatarClasses = [
     { id: 'estudante', name: 'Estudante', description: '+5% XP geral', bonus: 'Bônus universal' },

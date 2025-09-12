@@ -2,96 +2,167 @@ import { useState } from 'react'
 
 // Função para processar conteúdo estruturado do arquivo direito_penal_estruturado.json
 
-// Função para formatar conteúdo legal estruturado
-function formatCompleteLegalContent(conteudo) {
+// Função para formatar como "Lei Seca" (texto legal puro)
+function formatLegalTextRaw(conteudo, artigo) {
   if (!conteudo) return 'Conteúdo não disponível'
   
-  let formattedContent = ''
+  let legalText = ''
   
-  // Tipificação
-  if (conteudo.tipificacao) {
-    formattedContent += `📋 TIPIFICAÇÃO:\n${conteudo.tipificacao}\n\n`
-  }
+  // Identificar se é seção com múltiplos artigos
+  const hasMultipleArticles = artigo.includes('-') || Object.keys(conteudo).some(key => key.startsWith('art_'))
   
-  // Objetos/Incisos (mais comum na Seção 1)
-  if (conteudo.objetos && Array.isArray(conteudo.objetos)) {
-    formattedContent += `📜 OBJETOS PROTEGIDOS (INCISOS):\n`
-    conteudo.objetos.forEach(objeto => {
-      formattedContent += `${objeto}\n`
-    })
-    formattedContent += '\n'
-  }
-  
-  // Parágrafos estruturados (comum nas seções 2+)
-  Object.keys(conteudo).forEach(key => {
-    if (key.startsWith('paragrafo_')) {
-      const paragrafo = conteudo[key]
-      const numeroParag = key.replace('paragrafo_', '§')
-      
-      formattedContent += `📑 ${numeroParag.toUpperCase()}:\n`
-      
-      // Condutas (array)
-      if (paragrafo.condutas && Array.isArray(paragrafo.condutas)) {
-        formattedContent += `🔸 CONDUTAS:\n`
-        paragrafo.condutas.forEach(conduta => {
-          formattedContent += `   ${conduta}\n`
+  if (hasMultipleArticles) {
+    // Processar artigos individuais
+    Object.keys(conteudo)
+      .filter(key => key.startsWith('art_'))
+      .sort() // Ordenar por nome da chave
+      .forEach(key => {
+        const artigoData = conteudo[key]
+        const numeroArt = key.replace('art_', 'Art. ').replace('_', ' ')
+        
+        legalText += `${numeroArt}\n`
+        
+        // Tipificação
+        if (artigoData.tipificacao) {
+          legalText += `${artigoData.tipificacao}\n`
+        }
+        
+        // Conduta
+        if (artigoData.conduta) {
+          legalText += `${artigoData.conduta}\n`
+        }
+        
+        // Condutas múltiplas
+        if (artigoData.condutas && Array.isArray(artigoData.condutas)) {
+          artigoData.condutas.forEach(conduta => {
+            legalText += `${conduta}\n`
+          })
+        }
+        
+        // Finalidade específica
+        if (artigoData.finalidade) {
+          legalText += `com o fim de ${artigoData.finalidade}\n`
+        }
+        
+        // Penas
+        if (artigoData.pena) {
+          legalText += `Pena: ${artigoData.pena}\n`
+        }
+        if (artigoData.pena_documento_publico) {
+          legalText += `Pena - documento público: ${artigoData.pena_documento_publico}\n`
+        }
+        if (artigoData.pena_documento_particular) {
+          legalText += `Pena - documento particular: ${artigoData.pena_documento_particular}\n`
+        }
+        
+        // Consequência/Agravante
+        if (artigoData.consequencia) {
+          legalText += `${artigoData.consequencia}\n`
+        }
+        
+        // Parágrafo único
+        if (artigoData.paragrafo_unico) {
+          legalText += `Parágrafo único: ${artigoData.paragrafo_unico}\n`
+        }
+        
+        // Parágrafos numerados do artigo
+        Object.keys(artigoData).forEach(subKey => {
+          if (subKey.startsWith('paragrafo_') && subKey !== 'paragrafo_unico') {
+            const paragrafoData = artigoData[subKey]
+            const numeroParag = subKey.replace('paragrafo_', '§ ')
+            
+            legalText += `${numeroParag} `
+            
+            if (typeof paragrafoData === 'string') {
+              legalText += `${paragrafoData}\n`
+            } else if (paragrafoData.conduta) {
+              legalText += `${paragrafoData.conduta}\n`
+              if (paragrafoData.pena) {
+                legalText += `Pena: ${paragrafoData.pena}\n`
+              }
+            }
+          }
         })
-      }
-      
-      // Conduta única
-      if (paragrafo.conduta) {
-        formattedContent += `🔸 CONDUTA: ${paragrafo.conduta}\n`
-      }
-      
-      // Definição
-      if (paragrafo.definicao) {
-        formattedContent += `🔸 DEFINIÇÃO: ${paragrafo.definicao}\n`
-      }
-      
-      // Pena
-      if (paragrafo.pena) {
-        formattedContent += `⚖️ PENA: ${paragrafo.pena}\n`
-      }
-      
-      formattedContent += '\n'
+        
+        legalText += '\n'
+      })
+  } else {
+    // Seção com artigo único
+    
+    // Tipificação/Conduta principal
+    if (conteudo.tipificacao) {
+      legalText += `${conteudo.tipificacao}\n`
     }
-  })
-  
-  // Elementos do crime
-  if (conteudo.elementos && Array.isArray(conteudo.elementos)) {
-    formattedContent += `⚖️ ELEMENTOS DO CRIME:\n`
-    conteudo.elementos.forEach(elemento => {
-      formattedContent += `• ${elemento}\n`
-    })
-    formattedContent += '\n'
+    
+    // Objetos/Incisos
+    if (conteudo.objetos && Array.isArray(conteudo.objetos)) {
+      conteudo.objetos.forEach(objeto => {
+        legalText += `${objeto}\n`
+      })
+    }
+    
+    // Pena básica
+    if (conteudo.pena) {
+      legalText += `Pena: ${conteudo.pena}\n`
+    } else if (conteudo.pena_basica) {
+      legalText += `Pena: ${conteudo.pena_basica}\n`
+    }
+    
+    legalText += '\n'
+    
+    // Parágrafos da seção
+    Object.keys(conteudo)
+      .filter(key => key.startsWith('paragrafo_'))
+      .sort()
+      .forEach(key => {
+        const paragrafo = conteudo[key]
+        const numeroParag = key.replace('paragrafo_', '§ ')
+        
+        legalText += `${numeroParag} `
+        
+        // Condutas (array)
+        if (paragrafo.condutas && Array.isArray(paragrafo.condutas)) {
+          paragrafo.condutas.forEach((conduta, index) => {
+            if (index === 0) {
+              legalText += `${conduta}\n`
+            } else {
+              legalText += `${conduta}\n`
+            }
+          })
+        }
+        
+        // Condutas equiparadas
+        if (paragrafo.condutas_equiparadas && Array.isArray(paragrafo.condutas_equiparadas)) {
+          paragrafo.condutas_equiparadas.forEach(conduta => {
+            legalText += `${conduta}\n`
+          })
+        }
+        
+        // Conduta única
+        if (paragrafo.conduta) {
+          legalText += `${paragrafo.conduta}\n`
+        }
+        
+        // Definição
+        if (paragrafo.definicao) {
+          legalText += `${paragrafo.definicao}\n`
+        }
+        
+        // Pena do parágrafo
+        if (paragrafo.pena) {
+          legalText += `Pena: ${paragrafo.pena}\n`
+        }
+        
+        // Consequência
+        if (paragrafo.consequencia) {
+          legalText += `${paragrafo.consequencia}\n`
+        }
+        
+        legalText += '\n'
+      })
   }
   
-  // Sujeitos
-  if (conteudo.sujeito_ativo) {
-    formattedContent += `👤 SUJEITO ATIVO: ${conteudo.sujeito_ativo}\n`
-  }
-  if (conteudo.sujeito_passivo) {
-    formattedContent += `👥 SUJEITO PASSIVO: ${conteudo.sujeito_passivo}\n`
-  }
-  if (conteudo.sujeito_ativo || conteudo.sujeito_passivo) {
-    formattedContent += '\n'
-  }
-  
-  // Pena básica (para seções que não têm parágrafos)
-  if (conteudo.pena && !Object.keys(conteudo).some(k => k.startsWith('paragrafo_'))) {
-    formattedContent += `⚖️ PENA: ${conteudo.pena}\n\n`
-  }
-  
-  // Pontos-chave
-  if (conteudo.pontos_chave && Array.isArray(conteudo.pontos_chave)) {
-    formattedContent += `💡 PONTOS-CHAVE:\n`
-    conteudo.pontos_chave.forEach(ponto => {
-      formattedContent += `• ${ponto}\n`
-    })
-    formattedContent += '\n'
-  }
-  
-  return formattedContent.trim() || 'Informações não disponíveis'
+  return legalText.trim() || 'Texto legal não disponível'
 }
 
 const LegalTextViewer = ({ sectionContent, show = true }) => {
@@ -106,8 +177,8 @@ const LegalTextViewer = ({ sectionContent, show = true }) => {
   // Extrair dados da seção do arquivo direito_penal_estruturado.json
   const { titulo, artigo, conteudo } = sectionContent
   
-  // Formatar o conteúdo usando a estrutura já organizada
-  const formattedContent = formatCompleteLegalContent(conteudo)
+  // Formatar como lei seca (texto legal puro)
+  const formattedContent = formatLegalTextRaw(conteudo, artigo)
 
   const handleCopyText = async () => {
     try {
@@ -225,7 +296,7 @@ const LegalTextViewer = ({ sectionContent, show = true }) => {
             {/* Footer */}
             <div className="p-4 border-t bg-gray-50 text-center">
               <p className="text-xs text-gray-500">
-                📚 Texto legal oficial completo
+                ⚖️ Lei Seca - Código Penal Brasileiro
               </p>
             </div>
           </div>

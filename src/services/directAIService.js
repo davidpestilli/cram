@@ -19,6 +19,18 @@ const generateSingleQuestion = async (sectionContent, questionNumber) => {
   const questionConfig = getQuestionConfig(questionNumber)
   const prompt = createSingleQuestionPrompt(sectionContent, questionNumber, questionConfig)
   
+  // Log do prompt para debugging
+  console.log(`\n🔍 [PROMPT ENVIADO] Questão ${questionNumber} (${questionConfig.type.toUpperCase()})`)
+  if (questionConfig.type === 'pratica') {
+    console.log(`🎭 [VERIFICAÇÃO] Instruções de narrativa incluídas no prompt:`)
+    const includesNarrativeInstructions = prompt.includes('NARRATIVA COM PERSONAGENS')
+    const includesExampleFormat = prompt.includes('FORMATO OBRIGATÓRIO')
+    const includesPersonNames = prompt.includes('Nome de pessoa (João, Maria')
+    console.log(`   📋 Instruções de narrativa: ${includesNarrativeInstructions ? '✅' : '❌'}`)
+    console.log(`   📝 Formato obrigatório: ${includesExampleFormat ? '✅' : '❌'}`)
+    console.log(`   👤 Nomes de exemplo: ${includesPersonNames ? '✅' : '❌'}`)
+  }
+  
   const requestData = {
     model: "deepseek-chat",
     messages: [
@@ -78,6 +90,42 @@ RESPONDA APENAS JSON:
   
   const question = JSON.parse(jsonStr)
   question.id = questionNumber // Garantir ID correto
+  
+  // Log detalhado para análise de questões práticas vs teóricas
+  const isTheoreticalQuestion = questionConfig.type === 'teorica'
+  
+  console.log(`\n🎯 [QUESTÃO CRIADA] ID: ${questionNumber}`)
+  console.log(`📝 TIPO: ${questionConfig.type.toUpperCase()} (${questionConfig.expected ? 'VERDADEIRA' : 'FALSA'})`)
+  console.log(`💭 TEXTO: "${question.question_text}"`)
+  console.log(`✅ RESPOSTA: ${question.correct_answer}`)
+  
+  // Análise específica para questões práticas
+  if (!isTheoreticalQuestion) {
+    const hasPersonName = /\b(João|Maria|Ana|Carlos|Pedro|Marcos|José|Antônio|Francisca|Manoel|Sandra|Roberto|Paula|Ricardo|Fernanda|Eduardo|Luciana|Rafael|Juliana|Diego|Camila|Bruno|Patrícia|Gustavo|Aline|Felipe|Cristina|André|Márcia|Thiago|Renata|Leonardo|Vanessa|Rodrigo|Simone|Fábio|Tatiana|Vitor|Carla|Daniel|Silvia|Leandro|Rose)\b/i.test(question.question_text)
+    const hasAction = /(alterou|criou|falsificou|imitou|destruiu|rasgou|encontrou|colou|fabricou|modificou|apagou|trocou|substituiu|copiou|reproduziu)/i.test(question.question_text)
+    const hasDocument = /(certidão|diploma|carteira|RG|CPF|documento|papel|selo|vale|bilhete|cautela|talão|recibo|guia|alvará)/i.test(question.question_text)
+    const hasContext = /(para conseguir|para obter|durante|em um|numa|por causa|devido|com o objetivo|a fim de)/i.test(question.question_text)
+    
+    console.log(`🎭 ANÁLISE NARRATIVA:`)
+    console.log(`   👤 Tem nome de pessoa: ${hasPersonName ? '✅' : '❌'}`)
+    console.log(`   🎬 Tem ação concreta: ${hasAction ? '✅' : '❌'}`)
+    console.log(`   📄 Tem documento específico: ${hasDocument ? '✅' : '❌'}`)
+    console.log(`   🌍 Tem contexto/motivação: ${hasContext ? '✅' : '❌'}`)
+    
+    const narrativeScore = [hasPersonName, hasAction, hasDocument, hasContext].filter(Boolean).length
+    console.log(`🏆 PONTUAÇÃO NARRATIVA: ${narrativeScore}/4 ${narrativeScore >= 3 ? '✅ BOA NARRATIVA' : '⚠️ NARRATIVA FRACA'}`)
+    
+    if (narrativeScore < 3) {
+      console.log(`⚠️ [ALERTA] Questão prática ${questionNumber} não atende aos critérios de narrativa!`)
+    }
+  } else {
+    console.log(`📚 QUESTÃO TEÓRICA - Análise conceitual`)
+    const hasLegalConcept = /(pena|reclusão|detenção|art\.|artigo|inciso|parágrafo|crime|tipificação)/i.test(question.question_text)
+    console.log(`   ⚖️ Tem conceito legal: ${hasLegalConcept ? '✅' : '❌'}`)
+  }
+  
+  console.log(`🔧 EXPLICAÇÃO: "${question.explanation}"`)
+  console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`)
   
   return question
 }
@@ -206,11 +254,47 @@ export const generateQuestionsProgressively = async (options) => {
 
   console.log(`🎯 Processo concluído: ${questions.length}/${count} questões geradas`)
   
-  // Log da distribuição de questões
+  // Log da distribuição de questões V/F
   if (startFromGlobalCounter && questions.length > 0) {
     const trueCount = questions.filter(q => q.correct_answer === true).length
     const falseCount = questions.filter(q => q.correct_answer === false).length
     console.log(`📊 Distribuição V/F desta batch: ${trueCount}V + ${falseCount}F | Contador global atual: ${globalQuestionCounter}`)
+  }
+  
+  // Log da distribuição de tipos (prática vs teórica)
+  if (questions.length > 0) {
+    let teoricasCount = 0
+    let praticasCount = 0
+    let narrativasComBomScore = 0
+    
+    questions.forEach((q, index) => {
+      const questionNumber = startFromGlobalCounter ? (globalQuestionCounter - questions.length + index + 1) : (index + 1)
+      const questionConfig = getQuestionConfig(questionNumber)
+      
+      if (questionConfig.type === 'teorica') {
+        teoricasCount++
+      } else {
+        praticasCount++
+        
+        // Verificar se a questão prática tem boa narrativa
+        const hasPersonName = /\b(João|Maria|Ana|Carlos|Pedro|Marcos|José|Antônio|Francisca|Manoel|Sandra|Roberto|Paula|Ricardo|Fernanda|Eduardo|Luciana|Rafael|Juliana|Diego|Camila|Bruno|Patrícia|Gustavo|Aline|Felipe|Cristina|André|Márcia|Thiago|Renata|Leonardo|Vanessa|Rodrigo|Simone|Fábio|Tatiana|Vitor|Carla|Daniel|Silvia|Leandro|Rose)\b/i.test(q.question_text)
+        const hasAction = /(alterou|criou|falsificou|imitou|destruiu|rasgou|encontrou|colou|fabricou|modificou|apagou|trocou|substituiu|copiou|reproduziu)/i.test(q.question_text)
+        const hasDocument = /(certidão|diploma|carteira|RG|CPF|documento|papel|selo|vale|bilhete|cautela|talão|recibo|guia|alvará)/i.test(q.question_text)
+        const hasContext = /(para conseguir|para obter|durante|em um|numa|por causa|devido|com o objetivo|a fim de)/i.test(q.question_text)
+        
+        const narrativeScore = [hasPersonName, hasAction, hasDocument, hasContext].filter(Boolean).length
+        if (narrativeScore >= 3) {
+          narrativasComBomScore++
+        }
+      }
+    })
+    
+    console.log(`\n📋 [RESUMO DA GERAÇÃO]`)
+    console.log(`📚 Questões teóricas: ${teoricasCount}/${questions.length}`)
+    console.log(`🎭 Questões práticas: ${praticasCount}/${questions.length}`)
+    console.log(`✅ Narrativas bem estruturadas: ${narrativasComBomScore}/${praticasCount} práticas`)
+    console.log(`📈 Taxa de sucesso narrativo: ${praticasCount > 0 ? ((narrativasComBomScore/praticasCount)*100).toFixed(1) : 0}%`)
+    console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`)
   }
   
   if (errors.length > 0) {
@@ -292,25 +376,35 @@ ${isTheoreticalQuestion
 - Se VERDADEIRA: Use informações exatas dos artigos e incisos`
   : `INSTRUÇÕES PARA QUESTÕES PRÁTICAS - OBRIGATÓRIO SEGUIR:
 
-🎨 FORMATO OBRIGATÓRIO: "[Nome da pessoa] [ação concreta] [objeto/documento] [finalidade/contexto]"
+🎭 CRIE UMA NARRATIVA COM PERSONAGENS:
+Uma questão prática é uma HISTÓRIA REAL com personagens onde a legislação está sendo analisada.
+Deve ser uma NARRAÇÃO com pessoas reais em situações concretas da vida.
 
-✅ EXEMPLOS DE QUESTÕES PRÁTICAS CORRETAS:
+🎨 FORMATO OBRIGATÓRIO: "[Nome da pessoa] [ação concreta] [objeto/documento] [finalidade/contexto]. [Conclusão jurídica]."
+
+✅ EXEMPLOS DE NARRATIVAS PRÁTICAS CORRETAS:
 - "Maria alterou os dados de sua certidão de nascimento para parecer mais jovem em um concurso público. Cometeu o crime do Art. X."
 - "João criou um diploma universitário falso da USP para conseguir um emprego melhor. Praticou falsificação de documento público."
 - "Ana rasgou a carteira de motorista do ex-marido durante uma discussão. Cometeu o crime de falsificação."
 - "Pedro imitou a assinatura do pai em um cheque para sacar dinheiro. Caracteriza falsificação de documento."
+- "Carlos encontrou um selo tributário no chão e o colou em um documento vencido. Sua conduta configura crime."
 
 🚫 PROIBIDO em questões práticas:
 - Citar artigos diretamente ("O Art. 293 prevê...")
 - Explicar conceitos ("A falsificação consiste em...")
 - Usar termos técnicos sem contexto prático
 - Questões abstratas ou genéricas
+- Frases sem personagens ou situação concreta
 
-🎯 ELEMENTOS OBRIGATÓRIOS:
+🎯 ELEMENTOS OBRIGATÓRIOS PARA A NARRATIVA:
 - Nome de pessoa (João, Maria, Carlos, Ana, etc.)
-- Ação concreta (alterou, criou, falsificou, imitou, destruiu)
-- Documento/objeto específico (RG, diploma, certidão, carteira)
-- Motivação/contexto (para conseguir emprego, enganar autoridade, obter vantagem)`
+- Ação concreta (alterou, criou, falsificou, imitou, destruiu, encontrou, colou)
+- Documento/objeto específico (RG, diploma, certidão, carteira, selo, vale postal)
+- Motivação/contexto (para conseguir emprego, enganar autoridade, obter vantagem, por raiva)
+- Situação da vida real (concurso, trabalho, discussão, necessidade financeira)
+- Conclusão jurídica simples sobre se configura ou não o crime
+
+📚 LEMBRE-SE: Um exemplo prático envolve uma NARRAÇÃO com personagens em casos reais onde a legislação está sendo analisada. Não precisa ser longa, basta ser um caso real e situacional.`
 }
 
 RESPONDA APENAS JSON VÁLIDO:
@@ -656,6 +750,22 @@ async function generateSingleQuestionIntelligent(sectionContent, questionNumber,
   const questionConfig = getQuestionConfig(questionNumber)
   const prompt = createIntelligentQuestionPrompt(sectionContent, questionNumber, questionConfig, guidedPrompt)
   
+  // Log do prompt para debugging
+  console.log(`\n🔍 [PROMPT ENVIADO] Questão ${questionNumber} (${questionConfig.type.toUpperCase()})`)
+  if (questionConfig.type === 'pratica') {
+    console.log(`🎭 [VERIFICAÇÃO] Instruções de narrativa incluídas no prompt:`)
+    const includesNarrativeInstructions = prompt.includes('NARRATIVA COM PERSONAGENS')
+    const includesExampleFormat = prompt.includes('FORMATO OBRIGATÓRIO')
+    const includesPersonNames = prompt.includes('Nome de pessoa (João, Maria')
+    console.log(`   📋 Instruções de narrativa: ${includesNarrativeInstructions ? '✅' : '❌'}`)
+    console.log(`   📝 Formato obrigatório: ${includesExampleFormat ? '✅' : '❌'}`)
+    console.log(`   👤 Nomes de exemplo: ${includesPersonNames ? '✅' : '❌'}`)
+    
+    if (!includesNarrativeInstructions) {
+      console.log(`⚠️ [PROBLEMA] Instruções de narrativa NÃO foram incluídas no prompt!`)
+    }
+  }
+  
   return await generateSingleQuestionWithPrompt(sectionContent, questionNumber, prompt)
 }
 
@@ -665,9 +775,15 @@ function createIntelligentQuestionPrompt(sectionContent, questionNumber, questio
   const conteudo = sectionContent.conteudo || {}
   
   const expectedAnswer = questionConfig.expected ? 'VERDADEIRA' : 'FALSA'
+  const isTheoreticalQuestion = questionConfig.type === 'teorica'
+  
   const answerInstructions = questionConfig.expected 
-    ? 'Crie uma afirmação CORRETA sobre o conteúdo legal.'
-    : 'Crie uma afirmação INCORRETA, introduzindo um erro sutil mas claro.'
+    ? (isTheoreticalQuestion 
+        ? 'Crie uma afirmação CORRETA sobre o conteúdo legal direto (definições, penas, elementos).'
+        : 'Crie um CASO PRÁTICO CORRETO onde a situação se enquadra perfeitamente no crime.')
+    : (isTheoreticalQuestion
+        ? 'Crie uma afirmação INCORRETA sobre o conteúdo legal, introduzindo erro sutil mas claro.'
+        : 'Crie um CASO PRÁTICO INCORRETO onde a situação NÃO caracteriza o crime ou se confunde com outro.')
 
   // Usar conteúdo completo formatado
   const fullLegalContent = formatCompleteLegalContent(conteudo)
@@ -681,27 +797,60 @@ ${artigo} - ${titulo}
 ${fullLegalContent}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-QUESTÃO #${questionNumber} - RESPOSTA: ${expectedAnswer}
+QUESTÃO #${questionNumber} - TIPO: ${questionConfig.type.toUpperCase()}
+RESPOSTA OBRIGATÓRIA: ${expectedAnswer}
 ${answerInstructions}
 
-INSTRUÇÕES PARA GERAR QUESTÕES VARIADAS E ORIGINAIS:
-- EXPLORE OS INCISOS: Use diferentes incisos (I, II, III, IV, V, VI) para criar questões específicas
-- VARIE OS ASPECTOS: Foque em tipificação, objetos protegidos, penas, sujeitos, consumação, tentativa
-- Se FALSA: Introduza erros específicos (pena errada, modalidade incorreta, objeto não protegido, inciso trocado)
-- Se VERDADEIRA: Use informações exatas de incisos específicos, penas corretas, elementos precisos
-- SEJA ESPECÍFICO: Mencione documentos concretos dos incisos (ex: "vale postal", "cautela de penhor", "bilhete de transporte público")
-- EVITE GENERALIDADES: Não use apenas "papéis públicos" - cite documentos específicos dos incisos
-- SEJA CRIATIVO E ORIGINAL! Evite repetir padrões das questões existentes
+${isTheoreticalQuestion 
+  ? `INSTRUÇÕES PARA QUESTÕES TEÓRICAS:
+- Foque no TEXTO DA LEI: definições, penas, elementos, tipificação
+- EXPLORE OS INCISOS: Use diferentes incisos (I, II, III, IV, V, VI) para questões específicas
+- SEJA PRECISO: Cite valores exatos de penas, modalidades corretas (reclusão/detenção)
+- Se FALSA: Introduza erros específicos (pena errada, modalidade incorreta, inciso trocado)
+- Se VERDADEIRA: Use informações exatas dos artigos e incisos`
+  : `INSTRUÇÕES PARA QUESTÕES PRÁTICAS - OBRIGATÓRIO SEGUIR:
+
+🎭 CRIE UMA NARRATIVA COM PERSONAGENS:
+Uma questão prática é uma HISTÓRIA REAL com personagens onde a legislação está sendo analisada.
+Deve ser uma NARRAÇÃO com pessoas reais em situações concretas da vida.
+
+🎨 FORMATO OBRIGATÓRIO: "[Nome da pessoa] [ação concreta] [objeto/documento] [finalidade/contexto]. [Conclusão jurídica]."
+
+✅ EXEMPLOS DE NARRATIVAS PRÁTICAS CORRETAS:
+- "Maria alterou os dados de sua certidão de nascimento para parecer mais jovem em um concurso público. Cometeu o crime do Art. X."
+- "João criou um diploma universitário falso da USP para conseguir um emprego melhor. Praticou falsificação de documento público."
+- "Ana rasgou a carteira de motorista do ex-marido durante uma discussão. Cometeu o crime de falsificação."
+- "Pedro imitou a assinatura do pai em um cheque para sacar dinheiro. Caracteriza falsificação de documento."
+- "Carlos encontrou um selo tributário no chão e o colou em um documento vencido. Sua conduta configura crime."
+
+🚫 PROIBIDO em questões práticas:
+- Citar artigos diretamente ("O Art. 293 prevê...")
+- Explicar conceitos ("A falsificação consiste em...")
+- Usar termos técnicos sem contexto prático
+- Questões abstratas ou genéricas
+- Frases sem personagens ou situação concreta
+
+🎯 ELEMENTOS OBRIGATÓRIOS PARA A NARRATIVA:
+- Nome de pessoa (João, Maria, Carlos, Ana, etc.)
+- Ação concreta (alterou, criou, falsificou, imitou, destruiu, encontrou, colou)
+- Documento/objeto específico (RG, diploma, certidão, carteira, selo, vale postal)
+- Motivação/contexto (para conseguir emprego, enganar autoridade, obter vantagem, por raiva)
+- Situação da vida real (concurso, trabalho, discussão, necessidade financeira)
+- Conclusão jurídica simples sobre se configura ou não o crime
+
+📚 LEMBRE-SE: Um exemplo prático envolve uma NARRAÇÃO com personagens em casos reais onde a legislação está sendo analisada. Não precisa ser longa, basta ser um caso real e situacional.`
+}
 
 RESPONDA APENAS JSON VÁLIDO:
 {
   "id": ${questionNumber},
-  "question_text": "...",
+  "question_text": "sua questão aqui",
   "correct_answer": ${questionConfig.expected},
-  "explanation": "...",
+  "explanation": "explicação detalhada do por que é ${expectedAnswer}",
+  "source_text": "trecho da lei",
+  "modified_parts": [],
   "difficulty": 3,
-  "source_text": "${artigo}",
-  "modified_parts": ["descrição das modificações se falsa"]
+  "created_by_ai": "deepseek"
 }`
 }
 
@@ -771,7 +920,7 @@ async function generateSingleQuestionWithPrompt(sectionContent, questionNumber, 
     const content = response.data.choices[0].message.content
     const parsed = JSON.parse(content)
     
-    return {
+    const question = {
       id: questionNumber,
       question_text: parsed.question_text,
       correct_answer: Boolean(parsed.correct_answer),
@@ -780,6 +929,45 @@ async function generateSingleQuestionWithPrompt(sectionContent, questionNumber, 
       source_text: parsed.source_text || sectionContent.artigo,
       modified_parts: parsed.modified_parts || []
     }
+    
+    // Log detalhado para análise de questões práticas vs teóricas
+    const questionConfig = getQuestionConfig(questionNumber)
+    const isTheoreticalQuestion = questionConfig.type === 'teorica'
+    
+    console.log(`\n🎯 [QUESTÃO CRIADA] ID: ${questionNumber}`)
+    console.log(`📝 TIPO: ${questionConfig.type.toUpperCase()} (${questionConfig.expected ? 'VERDADEIRA' : 'FALSA'})`)
+    console.log(`💭 TEXTO: "${question.question_text}"`)
+    console.log(`✅ RESPOSTA: ${question.correct_answer}`)
+    
+    // Análise específica para questões práticas
+    if (!isTheoreticalQuestion) {
+      const hasPersonName = /\b(João|Maria|Ana|Carlos|Pedro|Marcos|José|Antônio|Francisca|Manoel|Sandra|Roberto|Paula|Ricardo|Fernanda|Eduardo|Luciana|Rafael|Juliana|Diego|Camila|Bruno|Patrícia|Gustavo|Aline|Felipe|Cristina|André|Márcia|Thiago|Renata|Leonardo|Vanessa|Rodrigo|Simone|Fábio|Tatiana|Vitor|Carla|Daniel|Silvia|Leandro|Rose)\b/i.test(question.question_text)
+      const hasAction = /(alterou|criou|falsificou|imitou|destruiu|rasgou|encontrou|colou|fabricou|modificou|apagou|trocou|substituiu|copiou|reproduziu)/i.test(question.question_text)
+      const hasDocument = /(certidão|diploma|carteira|RG|CPF|documento|papel|selo|vale|bilhete|cautela|talão|recibo|guia|alvará)/i.test(question.question_text)
+      const hasContext = /(para conseguir|para obter|durante|em um|numa|por causa|devido|com o objetivo|a fim de)/i.test(question.question_text)
+      
+      console.log(`🎭 ANÁLISE NARRATIVA:`)
+      console.log(`   👤 Tem nome de pessoa: ${hasPersonName ? '✅' : '❌'}`)
+      console.log(`   🎬 Tem ação concreta: ${hasAction ? '✅' : '❌'}`)
+      console.log(`   📄 Tem documento específico: ${hasDocument ? '✅' : '❌'}`)
+      console.log(`   🌍 Tem contexto/motivação: ${hasContext ? '✅' : '❌'}`)
+      
+      const narrativeScore = [hasPersonName, hasAction, hasDocument, hasContext].filter(Boolean).length
+      console.log(`🏆 PONTUAÇÃO NARRATIVA: ${narrativeScore}/4 ${narrativeScore >= 3 ? '✅ BOA NARRATIVA' : '⚠️ NARRATIVA FRACA'}`)
+      
+      if (narrativeScore < 3) {
+        console.log(`⚠️ [ALERTA] Questão prática ${questionNumber} não atende aos critérios de narrativa!`)
+      }
+    } else {
+      console.log(`📚 QUESTÃO TEÓRICA - Análise conceitual`)
+      const hasLegalConcept = /(pena|reclusão|detenção|art\.|artigo|inciso|parágrafo|crime|tipificação)/i.test(question.question_text)
+      console.log(`   ⚖️ Tem conceito legal: ${hasLegalConcept ? '✅' : '❌'}`)
+    }
+    
+    console.log(`🔧 EXPLICAÇÃO: "${question.explanation}"`)
+    console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`)
+    
+    return question
 
   } catch (error) {
     console.error(`❌ Erro ao gerar questão inteligente ${questionNumber}:`, error)

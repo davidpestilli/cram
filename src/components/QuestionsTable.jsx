@@ -4,7 +4,7 @@ import LoadingSpinner from './LoadingSpinner'
 import QuestionsCards from './QuestionsCards'
 import { useIsTouchDevice, useIsPhysicalMobile } from '../hooks/useMediaQuery'
 
-const QuestionsTable = () => {
+const QuestionsTable = ({ subjectId, sectionId }) => {
   const isTouchDevice = useIsTouchDevice()
   const isPhysicalMobile = useIsPhysicalMobile()
   const [questions, setQuestions] = useState([])
@@ -57,7 +57,11 @@ const QuestionsTable = () => {
         query = query.ilike('question_text', `%${searchTerm}%`)
       }
 
-      if (selectedSubject) {
+      // Filter by specific section if provided (from section context)
+      if (sectionId) {
+        query = query.eq('section_id', sectionId)
+      } else if (selectedSubject) {
+        // Only use subject filter if not in section context
         query = query.eq('subject_id', selectedSubject)
       }
 
@@ -81,11 +85,14 @@ const QuestionsTable = () => {
     } finally {
       setLoading(false)
     }
-  }, [currentPage, searchTerm, sortBy, sortDirection, selectedSubject])
+  }, [currentPage, searchTerm, sortBy, sortDirection, selectedSubject, sectionId])
 
   useEffect(() => {
-    loadSubjects()
-  }, [loadSubjects])
+    // Only load subjects if not in section context (to populate subject selector)
+    if (!sectionId) {
+      loadSubjects()
+    }
+  }, [loadSubjects, sectionId])
 
   useEffect(() => {
     loadQuestions()
@@ -259,7 +266,9 @@ const QuestionsTable = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <h2 className="text-2xl font-bold">Tabela de Questões</h2>
+        <h2 className="text-2xl font-bold">
+          {sectionId ? 'Questões desta Seção' : 'Tabela de Questões'}
+        </h2>
         <div className="flex items-center gap-4">
           {highlightedQuestions.size > 0 && (
             <div className="flex items-center gap-2">
@@ -362,7 +371,7 @@ const QuestionsTable = () => {
 
       {/* Filters */}
       <div className="card p-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className={`grid grid-cols-1 ${sectionId ? 'md:grid-cols-2' : 'md:grid-cols-3'} gap-4`}>
           <div>
             <label className="block text-sm font-medium mb-1">Buscar por texto:</label>
             <input
@@ -377,22 +386,25 @@ const QuestionsTable = () => {
             />
           </div>
           
-          <div>
-            <label className="block text-sm font-medium mb-1">Matéria:</label>
-            <select
-              value={selectedSubject}
-              onChange={(e) => {
-                setSelectedSubject(e.target.value)
-                setCurrentPage(1)
-              }}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-            >
-              <option value="">Todas as matérias</option>
-              {subjects.map(subject => (
-                <option key={subject.id} value={subject.id}>{subject.name}</option>
-              ))}
-            </select>
-          </div>
+          {/* Only show subject selector when not in section context */}
+          {!sectionId && (
+            <div>
+              <label className="block text-sm font-medium mb-1">Matéria:</label>
+              <select
+                value={selectedSubject}
+                onChange={(e) => {
+                  setSelectedSubject(e.target.value)
+                  setCurrentPage(1)
+                }}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              >
+                <option value="">Todas as matérias</option>
+                {subjects.map(subject => (
+                  <option key={subject.id} value={subject.id}>{subject.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div className="flex items-end gap-2">
             {selectedQuestions.size > 0 && (
@@ -431,8 +443,8 @@ const QuestionsTable = () => {
             questions={questions}
             selectedQuestions={selectedQuestions}
             highlightedQuestions={highlightedQuestions}
-            onToggleSelect={toggleQuestionSelection}
-            onToggleHighlight={toggleQuestionHighlight}
+            onToggleSelect={handleSelectQuestion}
+            onToggleHighlight={handleHighlightQuestion}
             onExpandQuestion={setExpandedQuestion}
             expandedQuestion={expandedQuestion}
           />

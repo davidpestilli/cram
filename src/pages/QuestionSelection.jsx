@@ -105,7 +105,10 @@ const QuestionSelection = () => {
               ← Voltar para Escolha de Tipos
             </button>
           </div>
-          <QuestionsTable />
+          <QuestionsTable 
+            subjectId={parseInt(subjectId)} 
+            sectionId={parseInt(sectionId)} 
+          />
         </div>
       </Layout>
     )
