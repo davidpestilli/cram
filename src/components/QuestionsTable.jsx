@@ -1,8 +1,12 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import LoadingSpinner from './LoadingSpinner'
+import QuestionsCards from './QuestionsCards'
+import { useIsTouchDevice, useIsPhysicalMobile } from '../hooks/useMediaQuery'
 
 const QuestionsTable = () => {
+  const isTouchDevice = useIsTouchDevice()
+  const isPhysicalMobile = useIsPhysicalMobile()
   const [questions, setQuestions] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -419,10 +423,25 @@ const QuestionsTable = () => {
         </div>
       )}
 
-      {/* Table */}
-      <div className="card overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
+      {/* Questions Display - Responsive */}
+      {isPhysicalMobile ? (
+        // Mobile: Cards Layout
+        <div className="space-y-4">
+          <QuestionsCards 
+            questions={questions}
+            selectedQuestions={selectedQuestions}
+            highlightedQuestions={highlightedQuestions}
+            onToggleSelect={toggleQuestionSelection}
+            onToggleHighlight={toggleQuestionHighlight}
+            onExpandQuestion={setExpandedQuestion}
+            expandedQuestion={expandedQuestion}
+          />
+        </div>
+      ) : (
+        // Desktop: Table Layout
+        <div className="card overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-4 py-3 text-left">
@@ -573,6 +592,16 @@ const QuestionsTable = () => {
           </div>
         )}
       </div>
+      )}
+
+      {/* Empty State - Mobile */}
+      {isPhysicalMobile && questions.length === 0 && !loading && (
+        <div className="text-center py-12 text-gray-500">
+          <div className="mb-4 text-4xl">📝</div>
+          <p className="text-lg font-medium">Nenhuma questão encontrada</p>
+          <p className="text-sm">Ajuste os filtros para ver mais resultados</p>
+        </div>
+      )}
 
       {/* Pagination */}
       {totalPages > 1 && (

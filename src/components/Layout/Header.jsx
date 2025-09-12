@@ -2,12 +2,16 @@ import { useAuth } from '../../contexts/AuthContext'
 import { Link, useLocation } from 'react-router-dom'
 import { useState } from 'react'
 import Avatar from '../Avatar'
+import { useIsMobile, useIsPhysicalMobile, useIsTouchDevice } from '../../hooks/useMediaQuery'
 
 const Header = () => {
   const { profile, signOut } = useAuth()
   const location = useLocation()
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [showMobileMenu, setShowMobileMenu] = useState(false)
+  const isMobile = useIsMobile()
+  const isPhysicalMobile = useIsPhysicalMobile()
+  const isTouchDevice = useIsTouchDevice()
 
   const handleSignOut = async () => {
     try {
@@ -46,13 +50,25 @@ const Header = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <div className="flex items-center">
+          <div className="flex items-center space-x-4">
             <Link to="/dashboard" className="flex items-center space-x-2">
               <h1 className="text-2xl font-bold text-primary-600 font-pixel">
                 CRAM
               </h1>
               <span className="text-sm text-gray-500">v1.0</span>
             </Link>
+            
+            {/* Mobile Stats - Compactas (apenas em dispositivos móveis reais) */}
+            {profile && isPhysicalMobile && (
+              <div className="flex items-center space-x-2 text-xs">
+                <span className="text-purple-600 font-semibold">Lv.{profile.level}</span>
+                <span className="text-blue-600">{profile.xp}✨</span>
+                <span className="text-yellow-600">{profile.gold}🪙</span>
+                {profile.current_streak > 0 && (
+                  <span className="text-orange-600">{profile.current_streak}🔥</span>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Navigation */}

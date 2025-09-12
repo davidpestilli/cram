@@ -1,0 +1,238 @@
+/* =================================================
+   MOBILE TOUCH OPTIMIZATIONS
+   ================================================= */
+
+/* Touch-friendly button styles */
+.btn-touch {
+  min-height: 44px;
+  padding: 12px 16px;
+  font-size: 16px;
+  line-height: 1.2;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  transition: all 0.15s ease;
+}
+
+/* Enhanced touch feedback */
+.touch-feedback {
+  position: relative;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.touch-feedback::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.3s, height 0.3s;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.touch-feedback:active::before {
+  width: 200px;
+  height: 200px;
+}
+
+/* Touch-friendly card hover states */
+@media (hover: none) and (pointer: coarse) {
+  /* Remove hover effects on touch devices */
+  .card:hover {
+    transform: none;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Add touch-specific active states */
+  .card:active {
+    transform: scale(0.98);
+    background-color: rgba(0, 0, 0, 0.02);
+  }
+  
+  /* Touch-friendly button active states */
+  .btn-primary:active {
+    transform: scale(0.96);
+    opacity: 0.9;
+  }
+  
+  .btn-secondary:active {
+    transform: scale(0.96);
+    opacity: 0.9;
+  }
+}
+
+/* Improved touch targets for small elements */
+.touch-target {
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Prevent zoom on input focus (iOS) */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+textarea,
+select {
+  font-size: 16px;
+}
+
+/* Smooth scrolling for mobile */
+@media (max-width: 768px) {
+  * {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Hide scrollbars on mobile while keeping functionality */
+@media (hover: none) and (pointer: coarse) {
+  .custom-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Touch-friendly modal animations */
+@media (max-width: 768px) {
+  .modal-mobile {
+    animation: slideUp 0.3s ease-out;
+  }
+  
+  @keyframes slideUp {
+    from {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+}
+
+/* Improved touch feedback for interactive elements */
+.interactive-touch {
+  -webkit-tap-highlight-color: rgba(59, 130, 246, 0.1);
+  tap-highlight-color: rgba(59, 130, 246, 0.1);
+}
+
+.interactive-touch:active {
+  background-color: rgba(59, 130, 246, 0.05);
+}
+
+/* Prevent text selection on touch interfaces */
+.no-select-touch {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Touch-friendly spacing */
+@media (hover: none) and (pointer: coarse) {
+  .touch-spacing > * + * {
+    margin-top: 12px;
+  }
+  
+  .touch-spacing-lg > * + * {
+    margin-top: 16px;
+  }
+}
+
+/* Haptic feedback simulation with CSS (visual cue) */
+.haptic-feedback:active {
+  animation: hapticPulse 0.15s ease-out;
+}
+
+@keyframes hapticPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(0.95); }
+  100% { transform: scale(1); }
+}
+
+/* Touch-optimized form elements */
+.form-touch input,
+.form-touch textarea,
+.form-touch select {
+  padding: 14px 16px;
+  font-size: 16px;
+  line-height: 1.4;
+  border-radius: 8px;
+  border: 2px solid #e5e7eb;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.form-touch input:focus,
+.form-touch textarea:focus,
+.form-touch select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Touch-friendly checkbox and radio buttons */
+.form-touch input[type="checkbox"],
+.form-touch input[type="radio"] {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+}
+
+/* Dark mode touch optimizations */
+@media (prefers-color-scheme: dark) and (hover: none) and (pointer: coarse) {
+  .touch-feedback::before {
+    background: rgba(255, 255, 255, 0.1);
+  }
+  
+  .interactive-touch:active {
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+  
+  .card:active {
+    background-color: rgba(255, 255, 255, 0.02);
+  }
+}
+
+/* Accessibility improvements for touch */
+@media (prefers-reduced-motion: reduce) {
+  .touch-feedback::before,
+  .haptic-feedback,
+  .modal-mobile {
+    animation: none;
+    transition: none;
+  }
+}
+
+/* Safe area handling for devices with notches */
+@supports (padding: max(0px)) {
+  .safe-area-top {
+    padding-top: max(12px, env(safe-area-inset-top));
+  }
+  
+  .safe-area-bottom {
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+  }
+  
+  .safe-area-left {
+    padding-left: max(12px, env(safe-area-inset-left));
+  }
+  
+  .safe-area-right {
+    padding-right: max(12px, env(safe-area-inset-right));
+  }
+}

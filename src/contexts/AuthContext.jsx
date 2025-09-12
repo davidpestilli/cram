@@ -108,18 +108,37 @@ export const AuthProvider = ({ children }) => {
 
   const signUp = async (email, password) => {
     try {
+      console.log('AuthContext signUp: Starting signup for', email)
       setLoading(true)
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
       })
       
-      if (error) throw error
+      console.log('AuthContext signUp: Supabase response', { 
+        hasData: !!data, 
+        hasUser: !!data?.user,
+        hasSession: !!data?.session,
+        hasError: !!error,
+        errorMessage: error?.message,
+        userId: data?.user?.id,
+        userEmail: data?.user?.email,
+        emailConfirmed: data?.user?.email_confirmed_at
+      })
+      
+      if (error) {
+        console.error('AuthContext signUp: Error from Supabase:', error)
+        throw error
+      }
+      
+      console.log('AuthContext signUp: Success, returning data')
       return { data, error: null }
     } catch (error) {
+      console.error('AuthContext signUp: Caught error:', error)
       return { data: null, error }
     } finally {
       setLoading(false)
+      console.log('AuthContext signUp: Finally block, setLoading(false)')
     }
   }
 

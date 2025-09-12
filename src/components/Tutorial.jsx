@@ -1,9 +1,20 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useIsTouchDevice, useIsPhysicalMobile } from '../hooks/useMediaQuery'
+import { useHorizontalSwipe } from '../hooks/useSwipeGestures'
 
 const Tutorial = ({ isOpen, onClose, steps = [] }) => {
   const [currentStep, setCurrentStep] = useState(0)
   const [isVisible, setIsVisible] = useState(false)
+  const isTouchDevice = useIsTouchDevice()
+  const isPhysicalMobile = useIsPhysicalMobile()
+  
+  // Swipe gestures para navegação (apenas em dispositivos touch)
+  const { swipeHandlers } = useHorizontalSwipe(
+    () => handleNext(), // Swipe left = próximo
+    () => handlePrevious(), // Swipe right = anterior
+    { disabled: !isTouchDevice }
+  )
 
   useEffect(() => {
     if (isOpen) {
@@ -48,13 +59,36 @@ const Tutorial = ({ isOpen, onClose, steps = [] }) => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4"
+          className={`fixed inset-0 z-50 bg-black/60 flex items-center justify-center ${
+            isPhysicalMobile ? 'p-2' : 'p-4'
+          }`}
         >
           <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.8, opacity: 0 }}
-            className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 relative"
+            initial={{ 
+              scale: isPhysicalMobile ? 0.9 : 0.8, 
+              opacity: 0,
+              y: isPhysicalMobile ? 50 : 0 
+            }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ 
+              scale: isPhysicalMobile ? 0.9 : 0.8, 
+              opacity: 0,
+              y: isPhysicalMobile ? 50 : 0
+            }}
+            className={`bg-white shadow-2xl w-full relative ${
+              isPhysicalMobile 
+                ? 'rounded-t-xl max-w-full max-h-[90vh] overflow-auto p-4' // Mobile: full width, rounded top
+                : 'rounded-xl max-w-md p-6' // Desktop: centered modal
+            }`}
+            style={isPhysicalMobile ? { 
+              position: 'fixed',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              borderBottomLeftRadius: 0,
+              borderBottomRightRadius: 0
+            } : {}}
+            {...(isTouchDevice ? swipeHandlers : {})}
           >
             {/* Close Button */}
             <button
@@ -117,22 +151,43 @@ const Tutorial = ({ isOpen, onClose, steps = [] }) => {
                   />
                 ))}
               </div>
+              
+              {/* Swipe Indication - Mobile Only */}
+              {isTouchDevice && (
+                <div className="flex items-center justify-center mt-3">
+                  <div className="flex items-center text-xs text-gray-400">
+                    <span>👈</span>
+                    <span className="mx-2">Deslize para navegar</span>
+                    <span>👉</span>
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* Navigation */}
-            <div className="flex justify-between items-center">
-              <div className="flex space-x-2">
+            {/* Navigation - Touch Optimized */}
+            <div className={`flex justify-between items-center ${
+              isPhysicalMobile ? 'gap-3' : ''
+            }`}>
+              <div className={`flex ${isPhysicalMobile ? 'gap-3' : 'space-x-2'}`}>
                 {currentStep > 0 && (
                   <button
                     onClick={handlePrevious}
-                    className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+                    className={`text-gray-600 hover:text-gray-800 transition-colors ${
+                      isTouchDevice 
+                        ? 'min-h-[44px] px-4 py-3 text-base' 
+                        : 'px-4 py-2'
+                    }`}
                   >
                     Anterior
                   </button>
                 )}
                 <button
                   onClick={handleSkip}
-                  className="px-4 py-2 text-gray-500 hover:text-gray-700 transition-colors"
+                  className={`text-gray-500 hover:text-gray-700 transition-colors ${
+                    isTouchDevice 
+                      ? 'min-h-[44px] px-4 py-3 text-base' 
+                      : 'px-4 py-2'
+                  }`}
                 >
                   Pular
                 </button>
@@ -140,7 +195,11 @@ const Tutorial = ({ isOpen, onClose, steps = [] }) => {
 
               <button
                 onClick={handleNext}
-                className="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md font-medium transition-colors"
+                className={`bg-blue-500 hover:bg-blue-600 text-white rounded-md font-medium transition-colors ${
+                  isTouchDevice 
+                    ? 'min-h-[44px] px-6 py-3 text-base' 
+                    : 'px-6 py-2'
+                }`}
               >
                 {currentStep < steps.length - 1 ? 'Próximo' : 'Finalizar'}
               </button>

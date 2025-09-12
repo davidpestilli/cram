@@ -8,6 +8,7 @@ import Layout from '../components/Layout/Layout'
 import XpGoldAnimation from '../components/XpGoldAnimation'
 import LevelUpNotification from '../components/LevelUpNotification'
 import StreakIndicator from '../components/StreakIndicator'
+import { useIsTouchDevice, useIsPhysicalMobile } from '../hooks/useMediaQuery'
 import ConfettiAnimation from '../components/ConfettiAnimation'
 import ParticleSystem from '../components/ParticleSystem'
 import ShakeAnimation from '../components/ShakeAnimation'
@@ -25,6 +26,10 @@ const StudySession = () => {
   const questionType = location.state?.questionType || 'auto'
   const { calculateXpGain, calculateGoldGain, updateUserXpAndGold } = useXpSystem()
   const { checkSpecificAchievements, getNextNotification, markNotificationShown } = useAchievements()
+  
+  // Detecção de dispositivo para otimizações mobile
+  const isTouchDevice = useIsTouchDevice()
+  const isPhysicalMobile = useIsPhysicalMobile()
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -602,19 +607,31 @@ const StudySession = () => {
             </p>
           </div>
 
-          {/* Answer Buttons */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          {/* Answer Buttons - Touch Optimized */}
+          <div className={`grid gap-4 mb-6 ${
+            isPhysicalMobile 
+              ? 'grid-cols-1 gap-6' // Mobile: stack vertically with more space
+              : 'grid-cols-1 md:grid-cols-2 gap-4' // Desktop: side by side
+          }`}>
             <button
               onClick={() => handleAnswer(true)}
               disabled={userAnswer !== null}
-              className={getAnswerButtonClass(true)}
+              className={`${getAnswerButtonClass(true)} ${
+                isTouchDevice 
+                  ? 'btn-touch touch-feedback haptic-feedback' // Touch optimizations
+                  : 'py-3 px-4' // Standard desktop size
+              }`}
             >
               ✅ VERDADEIRO
             </button>
             <button
               onClick={() => handleAnswer(false)}
               disabled={userAnswer !== null}
-              className={getAnswerButtonClass(false)}
+              className={`${getAnswerButtonClass(false)} ${
+                isTouchDevice 
+                  ? 'btn-touch touch-feedback haptic-feedback' // Touch optimizations
+                  : 'py-3 px-4' // Standard desktop size
+              }`}
             >
               ❌ FALSO
             </button>

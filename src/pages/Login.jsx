@@ -21,22 +21,46 @@ const Login = () => {
     setError('')
     setLoading(true)
 
+    console.log('Login: Starting', { isLogin, email, passwordLength: password.length })
+
     try {
       let result
       if (isLogin) {
+        console.log('Login: Attempting signIn')
         result = await signIn(email, password)
       } else {
+        console.log('Login: Attempting signUp')
         result = await signUp(email, password)
       }
 
+      console.log('Login: Result received', { 
+        hasData: !!result.data, 
+        hasError: !!result.error,
+        errorMessage: result.error?.message,
+        userData: result.data?.user ? { id: result.data.user.id, email: result.data.user.email } : null
+      })
+
       if (result.error) {
+        console.error('Login: Setting error message:', result.error.message)
         setError(result.error.message)
+      } else {
+        console.log('Login: Success, should redirect soon...')
+        
+        // Se é signup e o usuário foi criado mas não há sessão, significa que precisa confirmar email
+        if (!isLogin && result.data?.user && !result.data?.session) {
+          setError('')
+          alert(`Conta criada com sucesso! Verifique seu email (${email}) para confirmar a conta e depois faça login.`)
+          setIsLogin(true) // Volta para modo de login
+          return
+        }
       }
     } catch (err) {
+      console.error('Login: Unexpected error caught:', err)
       setError('An unexpected error occurred')
     }
     
     setLoading(false)
+    console.log('Login: Process completed, loading set to false')
   }
 
   return (
@@ -117,6 +141,7 @@ const Login = () => {
             <button
               type="button"
               onClick={() => {
+                console.log('Login: Toggling mode from', isLogin ? 'login' : 'signup', 'to', !isLogin ? 'login' : 'signup')
                 setIsLogin(!isLogin)
                 setError('')
               }}
