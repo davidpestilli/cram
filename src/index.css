@@ -1,11 +1,10 @@
 @import url('https://fonts.googleapis.com/css2?family=VT323:wght@400&display=swap');
+/* Mobile optimizations */
+@import './styles/mobile.css';
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* Mobile optimizations */
-@import './styles/mobile.css';
 
 @layer base {
   html {
