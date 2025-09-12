@@ -1,7 +1,7 @@
 {
-  "name": "CRAM - Direito Penal",
+  "name": "CRAM - Estudos Focados",
   "short_name": "CRAM",
-  "description": "Aplicativo gamificado para estudar Direito Penal com IA",
+  "description": "Aplicativo gamificado de estudos com IA",
   "start_url": "/cram/",
   "display": "standalone",
   "background_color": "#ffffff",

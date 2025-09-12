@@ -45,7 +45,7 @@ const Footer = () => {
               </h3>
             </div>
             <p className="text-gray-300 text-sm mb-4">
-              Estudos jurídicos gamificados. Aprenda Direito de forma divertida e eficiente.
+              Estudos gamificados. Estude de forma Divertida e Eficiente.
             </p>
             <div className="flex space-x-4">
               <a
@@ -96,7 +96,7 @@ const Footer = () => {
               © {currentYear} CRAM. Todos os direitos reservados.
             </div>
             <div className="text-gray-400 text-sm mt-4 md:mt-0">
-              Feito com ❤️ para estudantes de Direito
+              Feito com ❤️ para quem gosta de estudar
             </div>
           </div>
         </div>

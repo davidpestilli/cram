@@ -24,6 +24,8 @@ const StudySession = () => {
   const location = useLocation()
   const { profile } = useAuth()
   const questionType = location.state?.questionType || 'auto'
+  
+  
   const { calculateXpGain, calculateGoldGain, updateUserXpAndGold } = useXpSystem()
   const { checkSpecificAchievements, getNextNotification, markNotificationShown } = useAchievements()
   
@@ -34,6 +36,11 @@ const StudySession = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [questions, setQuestions] = useState([])
+  
+  // Estados para melhorar a animação de loading
+  const [loadingProgress, setLoadingProgress] = useState(0)
+  const [loadingMessage, setLoadingMessage] = useState('Iniciando geração...')
+  
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [sectionContent, setSectionContent] = useState(null)
   const [userAnswer, setUserAnswer] = useState(null)
@@ -72,11 +79,53 @@ const StudySession = () => {
   const isInitializingRef = useRef(false)
   const hasInitializedRef = useRef(false)
   const sessionKey = `study-session-${subjectId}-${sectionId}-${questionType}`
+  const progressIntervalRef = useRef(null)
+
+  // Simular progresso para geração de questões novas
+  const startLoadingProgress = useCallback(() => {
+    if (questionType !== 'new') return
+    
+    setLoadingProgress(0)
+    let progress = 0
+    let messageIndex = 0
+    
+    const messages = [
+      'Analisando conteúdo da matéria...',
+      'Processando com IA...',
+      'Aplicando regras específicas...',
+      'Gerando questões...',
+      'Validando qualidade...',
+      'Finalizando...'
+    ]
+    
+    progressIntervalRef.current = setInterval(() => {
+      progress += Math.random() * 8 + 2 // 2-10% por vez
+      
+      if (progress > 90) progress = 90 // Nunca chegar a 100% até terminar de fato
+      
+      setLoadingProgress(Math.min(progress, 90))
+      
+      // Mudar mensagem a cada ~20% de progresso
+      const newMessageIndex = Math.floor(progress / 15)
+      if (newMessageIndex !== messageIndex && newMessageIndex < messages.length) {
+        messageIndex = newMessageIndex
+        setLoadingMessage(messages[messageIndex])
+      }
+    }, 800) // A cada 800ms
+  }, [questionType])
+
+  const stopLoadingProgress = useCallback(() => {
+    if (progressIntervalRef.current) {
+      clearInterval(progressIntervalRef.current)
+      progressIntervalRef.current = null
+    }
+    setLoadingProgress(100)
+    setLoadingMessage('Questões prontas!')
+  }, [])
 
   const initializeStudySession = useCallback(async () => {
     // Proteção contra múltiplas chamadas - SIMPLIFICADA
     if (isInitializingRef.current || hasInitializedRef.current) {
-      console.log('⚠️ Sessão já está sendo inicializada ou já foi inicializada, ignorando chamada duplicada')
       return
     }
     
@@ -85,21 +134,33 @@ const StudySession = () => {
       setLoading(true)
       setStartTime(Date.now())
 
-      console.log(`🚀 Initializing ${questionType} study session...`)
+      // Iniciar progresso animado para questões novas
+      if (questionType === 'new') {
+        startLoadingProgress()
+      } else {
+        setLoadingMessage('Carregando questões...')
+      }
 
       const result = await QuestionsService.getOrCreateQuestions(
         parseInt(subjectId), 
         parseInt(sectionId),
         {
           userId: profile?.id,
-          questionType: questionType
+          questionType: questionType,
         }
       )
 
-      console.log(`✅ Loaded ${result.questions?.length || 0} ${result.source} questions`)
-
       setQuestions(result.questions)
       setQuestionStartTime(Date.now())
+      
+      // Finalizar progresso se for geração nova
+      if (questionType === 'new') {
+        stopLoadingProgress()
+        // Aguardar um pouco para mostrar "Questões prontas!"
+        setTimeout(() => {
+          setLoading(false)
+        }, 1000)
+      }
       
       // Limpar cache ao iniciar nova sessão
       setQuestionAnswers(new Map())
@@ -109,31 +170,55 @@ const StudySession = () => {
       try {
         const sectionData = await QuestionsService.getSectionContent(parseInt(sectionId))
         setSectionContent(sectionData)
-        console.log('📖 Conteúdo da seção carregado:', sectionData?.titulo)
       } catch (sectionError) {
         console.warn('⚠️ Erro ao carregar conteúdo da seção:', sectionError)
         // Não é crítico, continua sem o conteúdo
       }
+      
+      // Para questionType 'new', o hook simulará o progresso automaticamente
+      // A animação será encerrada naturalmente quando o progresso chegar a 100%
       
       // Marcar como inicializado com sucesso
       hasInitializedRef.current = true
 
     } catch (err) {
       console.error('❌ Error initializing study session:', err)
-      setError('Erro ao carregar questões. Tente novamente.')
+      const errorMessage = 'Erro ao carregar questões. Tente novamente.'
+      setError(errorMessage)
+      
+      // Erro ao carregar questões
     } finally {
-      setLoading(false)
+      // Para questões novas, loading é controlado pelo progresso
+      if (questionType !== 'new') {
+        setLoading(false)
+      }
       isInitializingRef.current = false
     }
-  }, [subjectId, sectionId, profile?.id, questionType])
+  }, [subjectId, sectionId, profile?.id, questionType, startLoadingProgress, stopLoadingProgress])
+
+  // Reset refs quando questionType muda para 'new' (executar apenas uma vez)
+  useEffect(() => {
+    if (questionType === 'new') {
+      hasInitializedRef.current = false
+      isInitializingRef.current = false
+    }
+  }, []) // Executar apenas no mount do componente
 
   // Initialize study session when component mounts
   useEffect(() => {
     if (subjectId && sectionId && profile?.id && !hasInitializedRef.current && !isInitializingRef.current) {
-      console.log(`🎬 Starting initialization for ${questionType} questions...`)
       initializeStudySession()
     }
-  }, [subjectId, sectionId, profile?.id, questionType])
+  }, [subjectId, sectionId, profile?.id, questionType, initializeStudySession])
+
+  // Cleanup para limpar interval de progresso
+  useEffect(() => {
+    return () => {
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current)
+      }
+    }
+  }, [])
 
   // Check for achievement notifications - DESABILITADO TEMPORARIAMENTE
   // useEffect(() => {
@@ -167,6 +252,7 @@ const StudySession = () => {
     }
   }, [currentQuestionIndex, questions.length])
   
+
   // Cleanup on unmount to allow reinitializing next time
   useEffect(() => {
     return () => {
@@ -384,19 +470,63 @@ const StudySession = () => {
     return Math.round(((currentQuestionIndex + 1) / questions.length) * 100)
   }
 
+  // Remover animação personalizada - usar loading padrão
+
   if (loading) {
     return (
       <Layout showFooter={false}>
         <div className="max-w-4xl mx-auto py-8 px-4">
           <div className="card p-8">
+            {/* Spinner central */}
             <LoadingSpinner 
               size="lg" 
-              text="Carregando questões..."
+              text={loadingMessage}
               type="dots"
             />
+            
+            {/* Barra de progresso para geração nova */}
+            {questionType === 'new' && (
+              <div className="mt-6">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm font-medium text-gray-700">Progresso</span>
+                  <span className="text-sm font-bold text-primary-600">
+                    {Math.round(loadingProgress)}%
+                  </span>
+                </div>
+                
+                <div className="relative bg-gray-200 rounded-full h-3 overflow-hidden">
+                  <div 
+                    className="absolute top-0 left-0 h-full bg-gradient-to-r from-primary-500 to-primary-600 rounded-full transition-all duration-500 ease-out"
+                    style={{ width: `${loadingProgress}%` }}
+                  />
+                  
+                  {/* Efeito shimmer */}
+                  <div 
+                    className="absolute top-0 left-0 h-full w-1/3 bg-gradient-to-r from-transparent via-white to-transparent opacity-30 animate-pulse"
+                    style={{ 
+                      transform: `translateX(${loadingProgress * 2}%)`,
+                      transition: 'transform 0.5s ease-out'
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+            
             <p className="text-sm text-gray-500 mt-4 text-center">
-              Isso pode levar alguns segundos enquanto a IA prepara suas questões personalizadas
+              {questionType === 'new' 
+                ? 'A IA está criando questões personalizadas especialmente para você'
+                : 'Isso pode levar alguns segundos enquanto a IA prepara suas questões personalizadas'
+              }
             </p>
+            
+            {/* Dica adicional para geração nova */}
+            {questionType === 'new' && loadingProgress > 50 && (
+              <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                <p className="text-xs text-blue-700 text-center">
+                  💡 Cada questão é única e gerada especificamente para você!
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </Layout>
@@ -760,6 +890,7 @@ const StudySession = () => {
           achievement={currentAchievement}
           onComplete={handleAchievementNotificationComplete}
         />
+
       </div>
     </Layout>
   )

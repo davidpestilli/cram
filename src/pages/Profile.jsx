@@ -28,11 +28,11 @@ const Profile = () => {
   const getClassInfo = (className) => {
     const classes = {
       estudante: { name: 'Estudante', bonus: '+5% XP geral', icon: '🎓' },
-      advogado: { name: 'Advogado', bonus: '+15% Direito Civil', icon: '⚖️' },
-      juiz: { name: 'Juiz', bonus: '+15% Processo Civil', icon: '👨‍⚖️' },
-      promotor: { name: 'Promotor', bonus: '+15% Direito Penal', icon: '🔍' },
-      delegado: { name: 'Delegado', bonus: '+15% Processo Penal', icon: '👮‍♂️' },
-      procurador: { name: 'Procurador', bonus: '+15% Direito Administrativo', icon: '🏛️' }
+      advogado: { name: 'Acadêmico', bonus: '+15% Matérias Teóricas', icon: '⚖️' },
+      juiz: { name: 'Analista', bonus: '+15% Questões Analíticas', icon: '👨‍⚖️' },
+      promotor: { name: 'Estrategista', bonus: '+15% Questões Práticas', icon: '🔍' },
+      delegado: { name: 'Investigador', bonus: '+15% Questões Objetivas', icon: '👮‍♂️' },
+      procurador: { name: 'Especialista', bonus: '+15% Matérias Específicas', icon: '🏛️' }
     }
     return classes[className] || classes.estudante
   }

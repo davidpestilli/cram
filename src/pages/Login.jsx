@@ -74,7 +74,7 @@ const Login = () => {
             {isLogin ? 'Entre na sua conta' : 'Crie sua conta'}
           </h2>
           <p className="mt-2 text-gray-600">
-            Estudos jurídicos gamificados
+            Estudos gamificados
           </p>
         </div>
 

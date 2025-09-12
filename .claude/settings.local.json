@@ -14,7 +14,9 @@
       "Bash(npm cache clean:*)",
       "Bash(git commit:*)",
       "Bash(node:*)",
-      "Bash(rg:*)"
+      "Bash(rg:*)",
+      "Bash(taskkill:*)",
+      "Bash(netstat:*)"
     ],
     "deny": [],
     "ask": []

@@ -36,7 +36,7 @@ const generateSingleQuestion = async (sectionContent, questionNumber) => {
     messages: [
       {
         role: "system",
-        content: `Você é um especialista em Direito Penal brasileiro que cria questões educativas.
+        content: `Você é um especialista em conteúdo educativo que cria questões educativas.
 
 TIPOS DE QUESTÕES:
 1. TEÓRICAS: Falam diretamente sobre a lei ("A pena do Art. 293 é...", "O crime se consuma quando...")
@@ -901,7 +901,7 @@ async function generateSingleQuestionWithPrompt(sectionContent, questionNumber, 
       messages: [
         {
           role: 'system',
-          content: 'Você é um especialista em Direito Penal brasileiro. Crie questões precisas e educativas.'
+          content: 'Você é um especialista em conteúdo educativo. Crie questões precisas e educativas.'
         },
         {
           role: 'user',

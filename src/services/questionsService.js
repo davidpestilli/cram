@@ -48,10 +48,10 @@ export class QuestionsService {
   }
 
   static async executeGeneration(subjectId, sectionId, options = {}) {
-    const { userId, questionType = 'auto', forceNew = false } = options
+    const { userId, questionType = 'auto', forceNew = false, onProgress } = options
 
     if (questionType === 'new' || forceNew) {
-      return await this.generateBalancedQuestions(subjectId, sectionId, 10)
+      return await this.generateBalancedQuestions(subjectId, sectionId, 10, onProgress)
     }
     
     // Comportamento automático (padrão)
@@ -633,7 +633,7 @@ export class QuestionsService {
    * @param {number} totalQuestions - Total de questões a gerar
    * @returns {Promise<Object>} Resultado da geração equilibrada
    */
-  static async generateBalancedQuestions(subjectId, sectionId, totalQuestions = 10) {
+  static async generateBalancedQuestions(subjectId, sectionId, totalQuestions = 10, onProgress = null) {
     try {
       console.log(`🎯 Iniciando geração equilibrada: ${totalQuestions} questões para seção ${sectionId}`)
 
@@ -644,7 +644,7 @@ export class QuestionsService {
         return await generationLocks.get(balancedLockKey)
       }
 
-      const balancedPromise = this.executeBalancedGeneration(subjectId, sectionId, totalQuestions)
+      const balancedPromise = this.executeBalancedGeneration(subjectId, sectionId, totalQuestions, onProgress)
       generationLocks.set(balancedLockKey, balancedPromise)
       
       try {
@@ -660,7 +660,7 @@ export class QuestionsService {
     }
   }
 
-  static async executeBalancedGeneration(subjectId, sectionId, totalQuestions = 10) {
+  static async executeBalancedGeneration(subjectId, sectionId, totalQuestions = 10, onProgress = null) {
     // Resetar contador global para manter distribuição 3F+2V e 3P+2T correta
     resetGlobalQuestionCounter()
     
@@ -689,7 +689,8 @@ export class QuestionsService {
     const allGeneratedQuestions = []
     const generationResults = []
 
-    for (const subsectionPlan of generationPlan) {
+    for (let i = 0; i < generationPlan.length; i++) {
+      const subsectionPlan = generationPlan[i]
       console.log(`🎯 Gerando ${subsectionPlan.questionsToGenerate} questões para: ${subsectionPlan.titulo}`)
       
       try {
@@ -702,6 +703,12 @@ export class QuestionsService {
 
         if (subsectionQuestions && subsectionQuestions.length > 0) {
           allGeneratedQuestions.push(...subsectionQuestions)
+          
+          // Callback de progresso
+          if (onProgress) {
+            onProgress(allGeneratedQuestions.length, totalQuestions)
+          }
+          
           generationResults.push({
             subsectionId: subsectionPlan.subsectionId,
             titulo: subsectionPlan.titulo,

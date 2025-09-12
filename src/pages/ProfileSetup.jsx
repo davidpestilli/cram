@@ -37,11 +37,11 @@ const ProfileSetup = () => {
 
   const avatarClasses = [
     { id: 'estudante', name: 'Estudante', description: '+5% XP geral', bonus: 'Bônus universal' },
-    { id: 'advogado', name: 'Advogado', description: '+15% Direito Civil', bonus: 'Especialista em Civil' },
-    { id: 'juiz', name: 'Juiz', description: '+15% Processo Civil', bonus: 'Mestre dos processos' },
-    { id: 'promotor', name: 'Promotor', description: '+15% Direito Penal', bonus: 'Defensor da justiça' },
-    { id: 'delegado', name: 'Delegado', description: '+15% Processo Penal', bonus: 'Investigador experiente' },
-    { id: 'procurador', name: 'Procurador', description: '+15% Direito Administrativo', bonus: 'Guardião do Estado' },
+    { id: 'advogado', name: 'Acadêmico', description: '+15% Matérias Teóricas', bonus: 'Especialista em teoria' },
+    { id: 'juiz', name: 'Analista', description: '+15% Questões Analíticas', bonus: 'Mestre da análise' },
+    { id: 'promotor', name: 'Estrategista', description: '+15% Questões Práticas', bonus: 'Defensor das estratégias' },
+    { id: 'delegado', name: 'Investigador', description: '+15% Questões Objetivas', bonus: 'Investigador experiente' },
+    { id: 'procurador', name: 'Especialista', description: '+15% Matérias Específicas', bonus: 'Guardião do conhecimento' },
   ]
 
   const handleSubmit = async (e) => {
