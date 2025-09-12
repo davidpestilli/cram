@@ -76,7 +76,7 @@ const Subjects = () => {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                Matérias Jurídicas
+                Matérias
               </h1>
               <p className="text-gray-600">
                 Escolha uma matéria para começar seus estudos
@@ -130,12 +130,12 @@ const Subjects = () => {
           <div className="card p-6 text-center">
             <h3 className="text-lg font-semibold mb-2">Mais matérias em breve!</h3>
             <p className="text-gray-600 mb-4">
-              Estamos trabalhando para trazer mais conteúdo jurídico para você.
+              Estamos trabalhando para trazer mais conteúdo para você.
             </p>
             <div className="flex justify-center space-x-4 text-sm text-gray-500">
-              <span>🔜 Direito Tributário</span>
-              <span>🔜 Direito Trabalhista</span>
-              <span>🔜 Direito Empresarial</span>
+              <span>🔜 Português</span>
+              <span>🔜 Matemática</span>
+              <span>🔜 Raciocínio Lógico</span>
             </div>
           </div>
         </div>
