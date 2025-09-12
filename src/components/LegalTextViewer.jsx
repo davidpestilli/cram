@@ -1,6 +1,8 @@
 import { useState } from 'react'
 
-// Importar a mesma função que a IA usa
+// Função para processar conteúdo estruturado do arquivo direito_penal_estruturado.json
+
+// Função para formatar conteúdo legal estruturado
 function formatCompleteLegalContent(conteudo) {
   if (!conteudo) return 'Conteúdo não disponível'
   
@@ -11,7 +13,7 @@ function formatCompleteLegalContent(conteudo) {
     formattedContent += `📋 TIPIFICAÇÃO:\n${conteudo.tipificacao}\n\n`
   }
   
-  // Objetos/Incisos (mais comum)
+  // Objetos/Incisos (mais comum na Seção 1)
   if (conteudo.objetos && Array.isArray(conteudo.objetos)) {
     formattedContent += `📜 OBJETOS PROTEGIDOS (INCISOS):\n`
     conteudo.objetos.forEach(objeto => {
@@ -20,20 +22,46 @@ function formatCompleteLegalContent(conteudo) {
     formattedContent += '\n'
   }
   
+  // Parágrafos estruturados (comum nas seções 2+)
+  Object.keys(conteudo).forEach(key => {
+    if (key.startsWith('paragrafo_')) {
+      const paragrafo = conteudo[key]
+      const numeroParag = key.replace('paragrafo_', '§')
+      
+      formattedContent += `📑 ${numeroParag.toUpperCase()}:\n`
+      
+      // Condutas (array)
+      if (paragrafo.condutas && Array.isArray(paragrafo.condutas)) {
+        formattedContent += `🔸 CONDUTAS:\n`
+        paragrafo.condutas.forEach(conduta => {
+          formattedContent += `   ${conduta}\n`
+        })
+      }
+      
+      // Conduta única
+      if (paragrafo.conduta) {
+        formattedContent += `🔸 CONDUTA: ${paragrafo.conduta}\n`
+      }
+      
+      // Definição
+      if (paragrafo.definicao) {
+        formattedContent += `🔸 DEFINIÇÃO: ${paragrafo.definicao}\n`
+      }
+      
+      // Pena
+      if (paragrafo.pena) {
+        formattedContent += `⚖️ PENA: ${paragrafo.pena}\n`
+      }
+      
+      formattedContent += '\n'
+    }
+  })
+  
   // Elementos do crime
   if (conteudo.elementos && Array.isArray(conteudo.elementos)) {
     formattedContent += `⚖️ ELEMENTOS DO CRIME:\n`
     conteudo.elementos.forEach(elemento => {
       formattedContent += `• ${elemento}\n`
-    })
-    formattedContent += '\n'
-  }
-  
-  // Objetos protegidos (diferente de objetos/incisos)
-  if (conteudo.objetos_protegidos && Array.isArray(conteudo.objetos_protegidos)) {
-    formattedContent += `🛡️ BENS JURÍDICOS PROTEGIDOS:\n`
-    conteudo.objetos_protegidos.forEach(objeto => {
-      formattedContent += `• ${objeto}\n`
     })
     formattedContent += '\n'
   }
@@ -49,52 +77,17 @@ function formatCompleteLegalContent(conteudo) {
     formattedContent += '\n'
   }
   
-  // Modalidades e aspectos objetivos/subjetivos
-  if (conteudo.aspecto_objetivo) {
-    formattedContent += `🎯 ASPECTO OBJETIVO: ${conteudo.aspecto_objetivo}\n`
-  }
-  if (conteudo.aspecto_subjetivo) {
-    formattedContent += `🧠 ASPECTO SUBJETIVO: ${conteudo.aspecto_subjetivo}\n`
-  }
-  if (conteudo.aspecto_objetivo || conteudo.aspecto_subjetivo) {
-    formattedContent += '\n'
-  }
-  
-  // Modalidades (tentativa, consumação, etc.)
-  if (conteudo.tentativa) {
-    formattedContent += `⏰ TENTATIVA: ${conteudo.tentativa}\n`
-  }
-  if (conteudo.consumacao) {
-    formattedContent += `✅ CONSUMAÇÃO: ${conteudo.consumacao}\n`
-  }
-  if (conteudo.tentativa || conteudo.consumacao) {
-    formattedContent += '\n'
-  }
-  
-  // Pena (sempre importante)
-  if (conteudo.pena) {
+  // Pena básica (para seções que não têm parágrafos)
+  if (conteudo.pena && !Object.keys(conteudo).some(k => k.startsWith('paragrafo_'))) {
     formattedContent += `⚖️ PENA: ${conteudo.pena}\n\n`
   }
   
-  // Observações e notas
-  if (conteudo.observacoes) {
-    formattedContent += `📝 OBSERVAÇÕES IMPORTANTES:\n${conteudo.observacoes}\n\n`
-  }
-  
-  if (conteudo.notas) {
-    formattedContent += `💡 NOTAS ADICIONAIS:\n${conteudo.notas}\n\n`
-  }
-  
-  // Classificações doutrinárias
-  if (conteudo.classificacao) {
-    formattedContent += `📚 CLASSIFICAÇÃO DOUTRINÁRIA:\n`
-    if (Array.isArray(conteudo.classificacao)) {
-      conteudo.classificacao.forEach(item => {
-        formattedContent += `• ${item}\n`
-      })
-    } else {
-      formattedContent += `${conteudo.classificacao}\n`
-    }
+  // Pontos-chave
+  if (conteudo.pontos_chave && Array.isArray(conteudo.pontos_chave)) {
+    formattedContent += `💡 PONTOS-CHAVE:\n`
+    conteudo.pontos_chave.forEach(ponto => {
+      formattedContent += `• ${ponto}\n`
+    })
     formattedContent += '\n'
   }
   
@@ -110,8 +103,10 @@ const LegalTextViewer = ({ sectionContent, show = true }) => {
     return null
   }
 
-  // Extrair dados da seção e usar a mesma formatação da IA
+  // Extrair dados da seção do arquivo direito_penal_estruturado.json
   const { titulo, artigo, conteudo } = sectionContent
+  
+  // Formatar o conteúdo usando a estrutura já organizada
   const formattedContent = formatCompleteLegalContent(conteudo)
 
   const handleCopyText = async () => {

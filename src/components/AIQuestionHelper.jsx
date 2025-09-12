@@ -81,7 +81,7 @@ const AIQuestionHelper = ({ question, userAnswer, isCorrect, sectionContent = nu
 
   return (
     <>
-      {/* Botão flutuante */}
+      {/* Botão flutuante otimizado para mobile */}
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
@@ -91,6 +91,7 @@ const AIQuestionHelper = ({ question, userAnswer, isCorrect, sectionContent = nu
             px-4 py-3 rounded-full shadow-lg
             flex items-center space-x-2
             transition-all duration-300 hover:scale-105
+            sm:min-h-[auto] sm:min-w-[auto] min-h-[48px] min-w-[48px]
             ${isCorrect ? 'animate-pulse' : 'animate-bounce'}
           `}
           title="Tire dúvidas sobre esta questão com nossa IA"
@@ -102,9 +103,9 @@ const AIQuestionHelper = ({ question, userAnswer, isCorrect, sectionContent = nu
         </button>
       )}
 
-      {/* Modal/Painel do chat */}
+      {/* Modal/Painel do chat otimizado para mobile */}
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
           {/* Backdrop */}
           <div 
             className="absolute inset-0 bg-black bg-opacity-50"
@@ -113,21 +114,21 @@ const AIQuestionHelper = ({ question, userAnswer, isCorrect, sectionContent = nu
           
           {/* Chat Panel */}
           <div className="
-            relative bg-white rounded-t-xl sm:rounded-xl shadow-2xl
-            w-full sm:w-[600px] sm:max-w-[90vw]
-            h-[80vh] sm:h-[600px] max-h-[90vh]
+            relative bg-white rounded-xl shadow-2xl
+            w-full max-w-2xl max-h-[90vh]
             flex flex-col
-            animate-in slide-in-from-bottom-4 sm:slide-in-from-bottom-0 sm:zoom-in-95
-            duration-300
+            animate-in zoom-in-95 duration-300
+            sm:h-auto h-[85vh]
+            rounded-t-xl sm:rounded-xl
           ">
             {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b bg-blue-50 rounded-t-xl sm:rounded-t-xl">
+            <div className="flex items-center justify-between p-6 border-b bg-blue-50 rounded-t-xl">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
                   <span className="text-xl">🤖</span>
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900">Professor IA</h3>
+                  <h3 className="text-lg font-bold text-gray-900">Professor IA</h3>
                   <p className="text-sm text-gray-600">
                     {isCorrect ? '🎉 Parabéns! Quer saber mais?' : '📚 Vamos esclarecer sua dúvida'}
                   </p>
@@ -152,7 +153,7 @@ const AIQuestionHelper = ({ question, userAnswer, isCorrect, sectionContent = nu
                   <p className="text-sm text-gray-600 mb-3">
                     💡 Algumas sugestões para você:
                   </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div className="space-y-2">
                     {suggestions.slice(0, 6).map((suggestion, index) => (
                       <button
                         key={index}
@@ -162,6 +163,8 @@ const AIQuestionHelper = ({ question, userAnswer, isCorrect, sectionContent = nu
                           border border-gray-200 hover:border-blue-300
                           rounded-lg text-sm transition-colors
                           disabled:opacity-50 disabled:cursor-not-allowed
+                          min-h-[48px] sm:min-h-[auto] flex items-center
+                          touch-manipulation
                         "
                         disabled={isLoading}
                       >
@@ -173,7 +176,7 @@ const AIQuestionHelper = ({ question, userAnswer, isCorrect, sectionContent = nu
               )}
 
               {/* Chat History */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              <div className="flex-1 overflow-y-auto p-6 space-y-4">
                 {chatHistory.map((message, index) => (
                   <div
                     key={index}
@@ -186,7 +189,7 @@ const AIQuestionHelper = ({ question, userAnswer, isCorrect, sectionContent = nu
                         : 'bg-gray-100 text-gray-900 rounded-bl-sm'
                       }
                     `}>
-                      <div className="whitespace-pre-wrap text-sm leading-relaxed">
+                      <div className="whitespace-pre-wrap leading-relaxed">
                         {message.content}
                       </div>
                     </div>
@@ -212,7 +215,7 @@ const AIQuestionHelper = ({ question, userAnswer, isCorrect, sectionContent = nu
             </div>
 
             {/* Input Area */}
-            <div className="p-4 border-t bg-gray-50">
+            <div className="p-6 border-t bg-gray-50">
               <form onSubmit={handleSubmit} className="flex space-x-2">
                 <textarea
                   value={userInput}
@@ -225,25 +228,27 @@ const AIQuestionHelper = ({ question, userAnswer, isCorrect, sectionContent = nu
                     flex-1 p-3 border border-gray-300 rounded-lg
                     focus:ring-2 focus:ring-blue-500 focus:border-blue-500
                     disabled:bg-gray-100 disabled:cursor-not-allowed
-                    resize-none text-sm
+                    resize-none
+                    min-h-[48px] sm:min-h-[auto] touch-manipulation
                   "
                 />
                 <button
                   type="submit"
                   disabled={isLoading || !userInput.trim()}
                   className="
-                    px-4 py-3 bg-blue-600 hover:bg-blue-700 
+                    px-6 py-3 bg-blue-600 hover:bg-blue-700 
                     disabled:bg-gray-300 disabled:cursor-not-allowed
                     text-white rounded-lg transition-colors
                     flex items-center justify-center
-                    min-w-[60px]
+                    min-h-[48px] sm:min-h-[auto]
+                    touch-manipulation
                   "
                   title="Enviar pergunta"
                 >
                   {isLoading ? (
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                   ) : (
-                    <span className="text-sm">📤</span>
+                    <span>📤</span>
                   )}
                 </button>
               </form>
