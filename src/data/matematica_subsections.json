@@ -1,0 +1,412 @@
+{
+  "titulo": "Matemática - Fundamentos e Aplicações",
+  "fonte": "Conteúdo programático para concursos públicos",
+  "sections": [
+    {
+      "id": 1,
+      "titulo": "Operações com Números Reais",
+      "subsections": [
+        {
+          "id": "propriedades_basicas",
+          "titulo": "Propriedades das Operações Básicas",
+          "conteudo": "Adição, subtração, multiplicação e divisão de números reais. Propriedades comutativa, associativa e distributiva.",
+          "tipo": "conceito_base",
+          "peso": 2,
+          "ordem": 1
+        },
+        {
+          "id": "numeros_racionais",
+          "titulo": "Números Racionais e Irracionais",
+          "conteudo": "Representação decimal, frações equivalentes, conversão entre formas de representação numérica.",
+          "tipo": "conceito_base",
+          "peso": 2,
+          "ordem": 2
+        },
+        {
+          "id": "operacoes_fracoes",
+          "titulo": "Operações com Frações",
+          "conteudo": "Adição, subtração, multiplicação e divisão de frações. Simplificação e comparação de frações.",
+          "tipo": "aplicacao_pratica",
+          "peso": 3,
+          "ordem": 3
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "titulo": "Mínimo Múltiplo Comum e Máximo Divisor Comum",
+      "subsections": [
+        {
+          "id": "conceitos_mmc_mdc",
+          "titulo": "Conceitos de MMC e MDC",
+          "conteudo": "Definições de múltiplo, divisor, mínimo múltiplo comum e máximo divisor comum.",
+          "tipo": "conceito_base",
+          "peso": 2,
+          "ordem": 1
+        },
+        {
+          "id": "algoritmos_calculo",
+          "titulo": "Algoritmos de Cálculo",
+          "conteudo": "Métodos para calcular MMC e MDC: decomposição em fatores primos, algoritmo de Euclides.",
+          "tipo": "metodo_calculo",
+          "peso": 3,
+          "ordem": 2
+        },
+        {
+          "id": "aplicacoes_mmc_mdc",
+          "titulo": "Aplicações Práticas",
+          "conteudo": "Problemas envolvendo periodização, divisão em grupos, simplificação de frações.",
+          "tipo": "aplicacao_pratica",
+          "peso": 3,
+          "ordem": 3
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "titulo": "Razão e Proporção",
+      "subsections": [
+        {
+          "id": "conceito_razao",
+          "titulo": "Conceito de Razão",
+          "conteudo": "Definição de razão entre duas grandezas, interpretação e representação de razões.",
+          "tipo": "conceito_base",
+          "peso": 2,
+          "ordem": 1
+        },
+        {
+          "id": "proporcoes_propriedades",
+          "titulo": "Proporções e Propriedades",
+          "conteudo": "Proporção direta e inversa, propriedade fundamental das proporções, meios e extremos.",
+          "tipo": "conceito_base",
+          "peso": 2,
+          "ordem": 2
+        },
+        {
+          "id": "divisao_proporcional",
+          "titulo": "Divisão Proporcional",
+          "conteudo": "Divisão em partes diretamente e inversamente proporcionais, regra da sociedade.",
+          "tipo": "aplicacao_pratica",
+          "peso": 3,
+          "ordem": 3
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "titulo": "Porcentagem",
+      "subsections": [
+        {
+          "id": "conceito_porcentagem",
+          "titulo": "Conceito de Porcentagem",
+          "conteudo": "Definição de porcentagem, conversão entre porcentagem, decimal e fração.",
+          "tipo": "conceito_base",
+          "peso": 2,
+          "ordem": 1
+        },
+        {
+          "id": "calculos_porcentagem",
+          "titulo": "Cálculos com Porcentagem",
+          "conteudo": "Cálculo de porcentagem de um valor, aumentos e descontos percentuais.",
+          "tipo": "metodo_calculo",
+          "peso": 3,
+          "ordem": 2
+        },
+        {
+          "id": "problemas_comerciais",
+          "titulo": "Problemas Comerciais",
+          "conteudo": "Lucro, prejuízo, desconto, acréscimo, variações percentuais sucessivas.",
+          "tipo": "aplicacao_pratica",
+          "peso": 3,
+          "ordem": 3
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "titulo": "Regra de Três Simples e Composta",
+      "subsections": [
+        {
+          "id": "regra_tres_simples",
+          "titulo": "Regra de Três Simples",
+          "conteudo": "Grandezas diretamente e inversamente proporcionais, montagem e resolução de regra de três simples.",
+          "tipo": "metodo_calculo",
+          "peso": 3,
+          "ordem": 1
+        },
+        {
+          "id": "regra_tres_composta",
+          "titulo": "Regra de Três Composta",
+          "conteudo": "Problemas envolvendo três ou mais grandezas proporcionais, análise de proporcionalidade.",
+          "tipo": "metodo_calculo",
+          "peso": 3,
+          "ordem": 2
+        },
+        {
+          "id": "aplicacoes_praticas",
+          "titulo": "Aplicações em Situações Cotidianas",
+          "conteudo": "Problemas de tempo, velocidade, trabalho, rendimento, escala, densidade populacional.",
+          "tipo": "aplicacao_pratica",
+          "peso": 4,
+          "ordem": 3
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "titulo": "Média Aritmética Simples e Ponderada",
+      "subsections": [
+        {
+          "id": "media_simples",
+          "titulo": "Média Aritmética Simples",
+          "conteudo": "Conceito, cálculo e interpretação da média aritmética simples de um conjunto de dados.",
+          "tipo": "conceito_base",
+          "peso": 2,
+          "ordem": 1
+        },
+        {
+          "id": "media_ponderada",
+          "titulo": "Média Aritmética Ponderada",
+          "conteudo": "Conceito de peso, cálculo da média ponderada, diferenças entre média simples e ponderada.",
+          "tipo": "metodo_calculo",
+          "peso": 3,
+          "ordem": 2
+        },
+        {
+          "id": "aplicacoes_medias",
+          "titulo": "Aplicações das Médias",
+          "conteudo": "Notas escolares, índices estatísticos, análise de desempenho, tomada de decisões.",
+          "tipo": "aplicacao_pratica",
+          "peso": 3,
+          "ordem": 3
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "titulo": "Juros Simples",
+      "subsections": [
+        {
+          "id": "conceitos_basicos",
+          "titulo": "Conceitos Básicos de Juros",
+          "conteudo": "Capital, taxa de juros, tempo, montante. Diferença entre juros simples e compostos.",
+          "tipo": "conceito_base",
+          "peso": 2,
+          "ordem": 1
+        },
+        {
+          "id": "formula_juros_simples",
+          "titulo": "Fórmula dos Juros Simples",
+          "conteudo": "J = C × i × t, M = C + J. Variações da fórmula para cálculo de cada variável.",
+          "tipo": "metodo_calculo",
+          "peso": 3,
+          "ordem": 2
+        },
+        {
+          "id": "problemas_financeiros",
+          "titulo": "Problemas Financeiros",
+          "conteudo": "Aplicações bancárias, empréstimos, financiamentos, descontos simples.",
+          "tipo": "aplicacao_pratica",
+          "peso": 4,
+          "ordem": 3
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "titulo": "Equações do 1º e 2º Graus",
+      "subsections": [
+        {
+          "id": "equacao_primeiro_grau",
+          "titulo": "Equações do 1º Grau",
+          "conteudo": "Forma geral ax + b = 0, métodos de resolução, verificação da solução.",
+          "tipo": "metodo_calculo",
+          "peso": 3,
+          "ordem": 1
+        },
+        {
+          "id": "equacao_segundo_grau",
+          "titulo": "Equações do 2º Grau",
+          "conteudo": "Forma geral ax² + bx + c = 0, discriminante, fórmula de Bhaskara, relações entre coeficientes e raízes.",
+          "tipo": "metodo_calculo",
+          "peso": 4,
+          "ordem": 2
+        },
+        {
+          "id": "aplicacoes_equacoes",
+          "titulo": "Aplicações das Equações",
+          "conteudo": "Problemas de idade, movimento, geometria, otimização de áreas e volumes.",
+          "tipo": "aplicacao_pratica",
+          "peso": 4,
+          "ordem": 3
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "titulo": "Sistemas de Equações do 1º Grau",
+      "subsections": [
+        {
+          "id": "conceito_sistema",
+          "titulo": "Conceito de Sistema Linear",
+          "conteudo": "Sistema de duas equações com duas incógnitas, representação e interpretação geométrica.",
+          "tipo": "conceito_base",
+          "peso": 2,
+          "ordem": 1
+        },
+        {
+          "id": "metodos_resolucao",
+          "titulo": "Métodos de Resolução",
+          "conteudo": "Método da substituição, método da adição, método gráfico.",
+          "tipo": "metodo_calculo",
+          "peso": 3,
+          "ordem": 2
+        },
+        {
+          "id": "classificacao_sistemas",
+          "titulo": "Classificação dos Sistemas",
+          "conteudo": "Sistema possível determinado, possível indeterminado, impossível. Discussão de sistemas.",
+          "tipo": "conceito_base",
+          "peso": 3,
+          "ordem": 3
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "titulo": "Relação entre Grandezas: Tabelas e Gráficos",
+      "subsections": [
+        {
+          "id": "interpretacao_tabelas",
+          "titulo": "Interpretação de Tabelas",
+          "conteudo": "Leitura e análise de dados tabulares, frequência, distribuição de dados.",
+          "tipo": "interpretacao_dados",
+          "peso": 2,
+          "ordem": 1
+        },
+        {
+          "id": "tipos_graficos",
+          "titulo": "Tipos de Gráficos",
+          "conteudo": "Gráfico de barras, linhas, setores, histogramas. Construção e interpretação.",
+          "tipo": "interpretacao_dados",
+          "peso": 3,
+          "ordem": 2
+        },
+        {
+          "id": "analise_tendencias",
+          "titulo": "Análise de Tendências",
+          "conteudo": "Crescimento, decrescimento, máximos, mínimos, correlação entre variáveis.",
+          "tipo": "aplicacao_pratica",
+          "peso": 3,
+          "ordem": 3
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "titulo": "Sistemas de Medidas Usuais",
+      "subsections": [
+        {
+          "id": "unidades_fundamentais",
+          "titulo": "Unidades Fundamentais",
+          "conteudo": "Metro, quilograma, segundo. Sistema Internacional de Unidades (SI).",
+          "tipo": "conceito_base",
+          "peso": 2,
+          "ordem": 1
+        },
+        {
+          "id": "conversoes_medidas",
+          "titulo": "Conversões de Medidas",
+          "conteudo": "Comprimento, massa, tempo, área, volume, capacidade. Múltiplos e submúltiplos.",
+          "tipo": "metodo_calculo",
+          "peso": 3,
+          "ordem": 2
+        },
+        {
+          "id": "medidas_nao_decimais",
+          "titulo": "Medidas Não Decimais",
+          "conteudo": "Tempo (horas, minutos, segundos), ângulos (graus, minutos, segundos).",
+          "tipo": "aplicacao_pratica",
+          "peso": 2,
+          "ordem": 3
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "titulo": "Noções de Geometria",
+      "subsections": [
+        {
+          "id": "figuras_planas",
+          "titulo": "Figuras Planas",
+          "conteudo": "Triângulos, quadriláteros, círculos. Propriedades e classificações.",
+          "tipo": "conceito_base",
+          "peso": 2,
+          "ordem": 1
+        },
+        {
+          "id": "perimetro_area",
+          "titulo": "Perímetro e Área",
+          "conteudo": "Fórmulas de perímetro e área das principais figuras planas. Unidades de medida.",
+          "tipo": "metodo_calculo",
+          "peso": 3,
+          "ordem": 2
+        },
+        {
+          "id": "figuras_espaciais",
+          "titulo": "Figuras Espaciais",
+          "conteudo": "Prismas, cilindros, pirâmides, cones, esferas. Cálculo de volume e área superficial.",
+          "tipo": "metodo_calculo",
+          "peso": 3,
+          "ordem": 3
+        },
+        {
+          "id": "angulos_teorema_pitagoras",
+          "titulo": "Ângulos e Teorema de Pitágoras",
+          "conteudo": "Tipos de ângulos, medidas angulares, triângulo retângulo, aplicações do teorema de Pitágoras.",
+          "tipo": "conceito_base",
+          "peso": 3,
+          "ordem": 4
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "titulo": "Resolução de Situações-Problema",
+      "subsections": [
+        {
+          "id": "interpretacao_enunciados",
+          "titulo": "Interpretação de Enunciados",
+          "conteudo": "Identificação de dados, incógnitas, relações entre grandezas. Tradução de linguagem natural para linguagem matemática.",
+          "tipo": "metodo_resolucao",
+          "peso": 4,
+          "ordem": 1
+        },
+        {
+          "id": "estrategias_resolucao",
+          "titulo": "Estratégias de Resolução",
+          "conteudo": "Tentativa e erro, trabalho regressivo, uso de diagramas, resolução por partes.",
+          "tipo": "metodo_resolucao",
+          "peso": 4,
+          "ordem": 2
+        },
+        {
+          "id": "verificacao_resultados",
+          "titulo": "Verificação e Interpretação",
+          "conteudo": "Análise da coerência dos resultados, verificação por substituição, interpretação no contexto do problema.",
+          "tipo": "metodo_resolucao",
+          "peso": 3,
+          "ordem": 3
+        },
+        {
+          "id": "problemas_cotidianos",
+          "titulo": "Problemas do Cotidiano",
+          "conteudo": "Situações envolvendo compras, medidas, tempo, dinheiro, planejamento, otimização de recursos.",
+          "tipo": "aplicacao_pratica",
+          "peso": 4,
+          "ordem": 4
+        }
+      ]
+    }
+  ]
+}

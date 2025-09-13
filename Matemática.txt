@@ -1,0 +1,14 @@
+Matemática
+1. Operações com números reais.
+2. Mínimo múltiplo comum e máximo divisor comum.
+3. Razão e proporção.
+4. Porcentagem.
+5. Regra de três simples e composta.
+6. Média aritmética simples e ponderada.
+7. Juros simples.
+8. Equação do 1.º e 2.º graus.
+9. Sistema de equações do 1.º grau.
+10. Relação entre grandezas: tabelas e gráficos.
+11. Sistemas de medidas usuais.
+12. Noções de geometria: forma, perímetro, área, volume, ângulo, teorema de Pitágoras.
+13. Resolução de situações-problema.

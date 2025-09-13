@@ -3,6 +3,7 @@ import { generateQuestions } from './deepseekApi'
 import { generateQuestionsProgressively, resetGlobalQuestionCounter } from './directAIService'
 import questionDeduplicationService from './questionDeduplicationService'
 import direitoPenalEstruturado from '../data/direito_penal_estruturado.json'
+import matematicaEstruturada from '../data/matematica_subsections.json'
 import SubsectionDistributionService from './subsectionDistributionService'
 
 console.log('🔄 QuestionsService carregado com import estático:', !!direitoPenalEstruturado)
@@ -118,24 +119,45 @@ export class QuestionsService {
     try {
       console.log(`📂 [NOVO] Carregando seção ${sectionId} via import direto...`)
       
-      // USAR DIRETO O IMPORT - SEM ASYNC, SEM FETCH!
-      if (!direitoPenalEstruturado || !direitoPenalEstruturado.secoes) {
+      // Determinar qual fonte de dados usar baseado no sectionId
+      let dataSource, sectionsArray
+      
+      if (sectionId >= 14 && sectionId <= 26) {
+        // IDs 14-26: Matemática
+        dataSource = matematicaEstruturada
+        sectionsArray = matematicaEstruturada?.sections
+        console.log(`📚 Carregando da fonte: Matemática`)
+      } else {
+        // IDs 1-13: Direito Penal  
+        dataSource = direitoPenalEstruturado
+        sectionsArray = direitoPenalEstruturado?.secoes
+        console.log(`⚖️ Carregando da fonte: Direito Penal`)
+      }
+      
+      if (!dataSource || !sectionsArray) {
         console.error('❌ Import falhou - dados não disponíveis')
         return this.getMockSectionContent(sectionId)
       }
       
-      console.log(`✅ Import OK! ${direitoPenalEstruturado.secoes.length} seções carregadas`)
+      console.log(`✅ Import OK! ${sectionsArray.length} seções carregadas`)
       
       // Encontrar a seção específica
-      const section = direitoPenalEstruturado.secoes.find(s => s.id === parseInt(sectionId))
+      const section = sectionsArray.find(s => s.id === parseInt(sectionId))
       
       if (section) {
         console.log(`✅ Seção ${sectionId} encontrada: "${section.titulo}"`)
-        console.log(`📝 Artigo: ${section.artigo}`)
+        
+        // Para Direito Penal, mostrar artigo; para Matemática, mostrar fonte
+        if (section.artigo) {
+          console.log(`📝 Artigo: ${section.artigo}`)
+        } else if (dataSource.fonte) {
+          console.log(`📚 Fonte: ${dataSource.fonte}`)
+        }
+        
         return section
       } else {
         console.warn(`⚠️ Seção ${sectionId} não encontrada`)
-        const availableSections = direitoPenalEstruturado.secoes.map(s => `${s.id}: ${s.titulo}`).join(', ')
+        const availableSections = sectionsArray.map(s => `${s.id}: ${s.titulo}`).join(', ')
         console.log(`📋 Seções disponíveis: ${availableSections}`)
         return this.getMockSectionContent(sectionId)
       }

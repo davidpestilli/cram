@@ -17,6 +17,7 @@ import EmptyState from '../components/EmptyState'
 import AchievementNotification from '../components/AchievementNotification'
 import AIQuestionHelper from '../components/AIQuestionHelper'
 import LegalTextViewer from '../components/LegalTextViewer'
+import MathContentViewer from '../components/MathContentViewer'
 
 const StudySession = () => {
   const { subjectId, sectionId } = useParams()
@@ -74,6 +75,10 @@ const StudySession = () => {
   // Achievement states
   const [showAchievementNotification, setShowAchievementNotification] = useState(false)
   const [currentAchievement, setCurrentAchievement] = useState(null)
+
+  // Content viewer states
+  const [showContentViewer, setShowContentViewer] = useState(false)
+  const [contentViewerTitle, setContentViewerTitle] = useState('')
   
   // Proteção robusta contra múltiplas chamadas em React StrictMode
   const isInitializingRef = useRef(false)
@@ -166,10 +171,11 @@ const StudySession = () => {
       setQuestionAnswers(new Map())
       setQuestionExplanations(new Map())
       
-      // Carregar conteúdo da seção para o viewer legal
+      // Carregar conteúdo da seção para o viewer
       try {
         const sectionData = await QuestionsService.getSectionContent(parseInt(sectionId))
         setSectionContent(sectionData)
+        setContentViewerTitle(sectionData?.titulo || 'Conteúdo da Seção')
       } catch (sectionError) {
         console.warn('⚠️ Erro ao carregar conteúdo da seção:', sectionError)
         // Não é crítico, continua sem o conteúdo
@@ -468,6 +474,11 @@ const StudySession = () => {
 
   const getProgressPercentage = () => {
     return Math.round(((currentQuestionIndex + 1) / questions.length) * 100)
+  }
+
+  // Determinar se é matéria de Matemática baseado no subjectId
+  const isMathSubject = () => {
+    return parseInt(subjectId) === 2 // ID 2 = Matemática
   }
 
   // Remover animação personalizada - usar loading padrão
@@ -844,12 +855,46 @@ const StudySession = () => {
           </p>
         </div>
 
-        {/* Legal Text Viewer */}
-        <LegalTextViewer 
-          sectionContent={sectionContent}
-          currentQuestion={currentQuestion}
-          show={!loading} // Mostrar quando carregado
-        />
+        {/* Content Viewers - Escolher baseado na matéria */}
+        {!isMathSubject() && (
+          <LegalTextViewer 
+            sectionContent={sectionContent}
+            currentQuestion={currentQuestion}
+            show={!loading} // Mostrar quando carregado
+          />
+        )}
+        
+        {isMathSubject() && (
+          <>
+            {/* Botão flutuante para ver conteúdo matemático */}
+            {!showContentViewer && (
+              <button
+                onClick={() => setShowContentViewer(true)}
+                className={`
+                  fixed bottom-6 left-6 z-50
+                  bg-emerald-600 hover:bg-emerald-700 text-white
+                  px-4 py-3 rounded-full shadow-lg
+                  flex items-center space-x-2
+                  transition-all duration-300 hover:scale-105
+                  animate-pulse hover:animate-none
+                `}
+                title="Ver conteúdo completo desta seção"
+              >
+                <span className="text-lg">📚</span>
+                <span className="hidden sm:inline text-sm font-medium">
+                  Ver Conteúdo
+                </span>
+              </button>
+            )}
+            
+            <MathContentViewer 
+              sectionContent={sectionContent}
+              sectionTitle={contentViewerTitle}
+              isOpen={showContentViewer}
+              onClose={() => setShowContentViewer(false)}
+            />
+          </>
+        )}
 
         {/* AI Question Helper */}
         <AIQuestionHelper 

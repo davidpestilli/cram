@@ -38,21 +38,36 @@ const generateSingleQuestion = async (sectionContent, questionNumber) => {
         role: "system",
         content: `Você é um especialista em conteúdo educativo que cria questões educativas.
 
-TIPOS DE QUESTÕES:
+${isMathContent(sectionContent) ? 
+`🧮 MATEMÁTICA - NÍVEL 9º ANO DO ENSINO FUNDAMENTAL:
+- Use linguagem simples e direta, adequada para estudantes de 14-15 anos
+- Problemas práticos do cotidiano (compras, medidas, percentuais, tempo)
+- Evite conceitos avançados do ensino médio (funções, logaritmos, derivadas)
+- Foque em aplicações básicas e fundamentais
+- Use valores numéricos simples e familiares
+- Contextualize com situações que os estudantes conhecem
+
+TIPOS DE QUESTÕES DE MATEMÁTICA:
+1. CONCEITUAIS: Sobre definições e propriedades básicas
+2. APLICAÇÕES: Problemas práticos do dia a dia` :
+`TIPOS DE QUESTÕES JURÍDICAS:
 1. TEÓRICAS: Falam diretamente sobre a lei ("A pena do Art. 293 é...", "O crime se consuma quando...")
-2. PRÁTICAS: Contam histórias com pessoas reais ("João falsificou seu diploma...", "Maria alterou sua certidão...")
+2. PRÁTICAS: Contam histórias com pessoas reais ("João falsificou seu diploma...", "Maria alterou sua certidão...")`}
 
 🎯 QUESTÃO ATUAL: ${questionConfig.type?.toUpperCase() || 'NÃO ESPECIFICADO'}
 
-${questionConfig.type === 'pratica' ? 
+${isMathContent(sectionContent) ? 
+`🔵 QUESTÃO DE MATEMÁTICA:
+Use problemas simples do cotidiano adequados ao 9º ano.
+EXEMPLO: "Para fazer um bolo, Maria precisa de 2/3 de xícara de farinha. Se ela quer fazer 3 bolos, precisará de 2 xícaras de farinha."` :
+(questionConfig.type === 'pratica' ? 
 `🔴 ATENÇÃO - QUESTÃO PRÁTICA:
 CRIE UMA HISTÓRIA com pessoa, ação e documento/objeto.
 EXEMPLO: "Carlos alterou sua carteira de habitação para mudar a categoria sem fazer o exame. Cometeu falsificação de documento público."
 NÃO faça questão teórica!` : 
 `🔵 QUESTÃO TEÓRICA:
 Fale diretamente sobre a lei, penas, conceitos juridicos.
-EXEMPLO: "A pena para falsificação de documento público é reclusão de 2 a 6 anos."`
-}
+EXEMPLO: "A pena para falsificação de documento público é reclusão de 2 a 6 anos."`)}
 
 Resposta OBRIGATÓRIA: ${questionConfig.expected ? 'VERDADEIRA' : 'FALSA'}
 correct_answer DEVE SER: ${questionConfig.expected ? 'true' : 'false'}
@@ -143,11 +158,11 @@ export const generateQuestionsProgressively = async (options) => {
     ({ sectionContent, targetCount: count = 5, onProgress = null, subjectId = 1, sectionId = 1, customPrompt, startFromGlobalCounter = true } = options)
   } else {
     // Assinatura antiga (parâmetros individuais) para compatibilidade
-    sectionContent = arguments[0]
-    count = arguments[1] || 5
-    onProgress = arguments[2] || null
-    subjectId = arguments[3] || 1
-    sectionId = arguments[4] || 1
+    sectionContent = options
+    count = onProgress || 5
+    onProgress = subjectId || null
+    subjectId = sectionId || 1
+    sectionId = customPrompt || 1
     startFromGlobalCounter = false
   }
   
@@ -336,6 +351,28 @@ export const generateQuestionsDirectly = async (sectionContent, count = 5) => {
   return result.questions
 }
 
+// Função auxiliar para detectar se é conteúdo de matemática
+const isMathContent = (sectionContent) => {
+  const titulo = sectionContent.titulo || ''
+  const artigo = sectionContent.artigo || ''
+  
+  return titulo.toLowerCase().includes('matemática') ||
+         artigo.toLowerCase().includes('operações') ||
+         artigo.toLowerCase().includes('mmc') ||
+         artigo.toLowerCase().includes('mdc') ||
+         artigo.toLowerCase().includes('razão') ||
+         artigo.toLowerCase().includes('proporção') ||
+         artigo.toLowerCase().includes('porcentagem') ||
+         artigo.toLowerCase().includes('regra de três') ||
+         artigo.toLowerCase().includes('média') ||
+         artigo.toLowerCase().includes('juros') ||
+         artigo.toLowerCase().includes('equações') ||
+         artigo.toLowerCase().includes('sistemas') ||
+         artigo.toLowerCase().includes('gráficos') ||
+         artigo.toLowerCase().includes('geometria') ||
+         artigo.toLowerCase().includes('medidas')
+}
+
 const createSingleQuestionPrompt = (sectionContent, questionNumber, questionConfig) => {
   const artigo = sectionContent.artigo || 'Artigo não especificado'
   const titulo = sectionContent.titulo || 'Seção sem título'
@@ -343,28 +380,46 @@ const createSingleQuestionPrompt = (sectionContent, questionNumber, questionConf
   
   const expectedAnswer = questionConfig.expected ? 'VERDADEIRA' : 'FALSA'
   const isTheoreticalQuestion = questionConfig.type === 'teorica'
+  const isMath = isMathContent(sectionContent)
   
-  const answerInstructions = questionConfig.expected 
-    ? (isTheoreticalQuestion 
-        ? 'Crie uma afirmação CORRETA sobre o conteúdo legal direto (definições, penas, elementos).'
-        : 'Crie um CASO PRÁTICO CORRETO onde a situação se enquadra perfeitamente no crime.')
-    : (isTheoreticalQuestion
-        ? 'Crie uma afirmação INCORRETA sobre o conteúdo legal, introduzindo erro sutil mas claro.'
-        : 'Crie um CASO PRÁTICO INCORRETO onde a situação NÃO caracteriza o crime ou se confunde com outro.')
+  const answerInstructions = isMath ? 
+    (questionConfig.expected 
+      ? 'Crie uma afirmação matemática CORRETA ou um problema com solução verdadeira adequado ao 9º ano.'
+      : 'Crie uma afirmação matemática INCORRETA ou um problema com solução falsa (erro no cálculo ou conceito).')
+    : (questionConfig.expected 
+        ? (isTheoreticalQuestion 
+            ? 'Crie uma afirmação CORRETA sobre o conteúdo legal direto (definições, penas, elementos).'
+            : 'Crie um CASO PRÁTICO CORRETO onde a situação se enquadra perfeitamente no crime.')
+        : (isTheoreticalQuestion
+            ? 'Crie uma afirmação INCORRETA sobre o conteúdo legal, introduzindo erro sutil mas claro.'
+            : 'Crie um CASO PRÁTICO INCORRETO onde a situação NÃO caracteriza o crime ou se confunde com outro.'))
   
   // Formatar conteúdo completo
-  const fullLegalContent = formatCompleteLegalContent(conteudo)
+  const fullContent = isMath ? formatMathContent(conteudo) : formatCompleteLegalContent(conteudo)
   
   return `Crie UMA questão verdadeiro/falso sobre ${artigo} - ${titulo}.
 RESPOSTA OBRIGATÓRIA: ${expectedAnswer}
 
-CONTEÚDO LEGAL COMPLETO:
+${isMath ? 
+`CONTEÚDO MATEMÁTICO:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-${fullLegalContent}
+${fullContent}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-QUESTÃO #${questionNumber} - TIPO: ${questionConfig.type.toUpperCase()}
-${questionConfig.focus}
+🧮 INSTRUÇÕES PARA MATEMÁTICA - 9º ANO:
+- Use linguagem simples e direta
+- Problemas do cotidiano (compras, receitas, medidas, dinheiro)
+- Números simples e familiares (evite decimais complexos)
+- Contexto conhecido pelos estudantes
+- Evite conceitos do ensino médio
+- Foque no essencial e fundamental` :
+`CONTEÚDO LEGAL COMPLETO:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${fullContent}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`}
+
+QUESTÃO #${questionNumber} - TIPO: ${isMath ? 'MATEMÁTICA' : questionConfig.type.toUpperCase()}
+${isMath ? 'NÍVEL: 9º ANO DO ENSINO FUNDAMENTAL' : questionConfig.focus}
 ${answerInstructions}
 
 ${isTheoreticalQuestion 
@@ -461,12 +516,8 @@ const getQuestionConfig = (questionNumber) => {
   return configs[normalizedNumber - 1] || configs[0]
 }
 
-const getQuestionFocus = (questionNumber) => {
-  const config = getQuestionConfig(questionNumber)
-  return config.focus
-}
 
-const createDirectPrompt = (sectionContent, count) => {
+const _createDirectPrompt = (sectionContent, count) => {
   const artigo = sectionContent.artigo || 'Artigo não especificado'
   const titulo = sectionContent.titulo || 'Seção sem título'
   const conteudo = sectionContent.conteudo || {}
@@ -503,7 +554,7 @@ REGRAS:
 IMPORTANTE: COPIE O FORMATO EXATO ACIMA.`
 }
 
-const parseDirectResponse = (aiResponse, sectionContent) => {
+const _parseDirectResponse = (aiResponse, sectionContent) => {
   try {
     console.log('🔍 Parseando resposta da IA...')
     console.log('📝 Resposta bruta completa:', aiResponse)
@@ -974,6 +1025,24 @@ async function generateSingleQuestionWithPrompt(sectionContent, questionNumber, 
     // Fallback para método original
     return await generateSingleQuestion(sectionContent, questionNumber)
   }
+}
+
+// Função auxiliar para formatar conteúdo matemático
+function formatMathContent(conteudo) {
+  if (!conteudo || !conteudo.subsections) return 'Conteúdo não disponível'
+  
+  let formattedContent = ''
+  
+  if (Array.isArray(conteudo.subsections)) {
+    conteudo.subsections
+      .sort((a, b) => a.ordem - b.ordem)
+      .forEach(subsecao => {
+        formattedContent += `📋 ${subsecao.titulo}\n`
+        formattedContent += `${subsecao.conteudo}\n\n`
+      })
+  }
+  
+  return formattedContent.trim() || 'Conteúdo matemático não disponível'
 }
 
 // Função auxiliar para formatar conteúdo legal completo

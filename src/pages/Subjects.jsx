@@ -36,7 +36,8 @@ const Subjects = () => {
       handshake: '🤝',
       document: '📄',
       flag: '🏴',
-      building: '🏢'
+      building: '🏢',
+      calculator: '🧮'
     }
     return icons[icon] || '📚'
   }
@@ -134,8 +135,8 @@ const Subjects = () => {
             </p>
             <div className="flex justify-center space-x-4 text-sm text-gray-500">
               <span>🔜 Português</span>
-              <span>🔜 Matemática</span>
               <span>🔜 Raciocínio Lógico</span>
+              <span>🔜 Informática</span>
             </div>
           </div>
         </div>
@@ -152,7 +153,8 @@ const SubjectCard = ({ subject }) => {
       handshake: '🤝',
       document: '📄',
       flag: '🏴',
-      building: '🏢'
+      building: '🏢',
+      calculator: '🧮'
     }
     return icons[icon] || '📚'
   }
