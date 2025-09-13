@@ -142,7 +142,15 @@ export class QuestionsService {
       console.log(`✅ Import OK! ${sectionsArray.length} seções carregadas`)
       
       // Encontrar a seção específica
-      const section = sectionsArray.find(s => s.id === parseInt(sectionId))
+      let searchId = parseInt(sectionId)
+      
+      // Para Matemática, ajustar o ID: banco (14-26) → JSON (1-13)
+      if (sectionId >= 14 && sectionId <= 26) {
+        searchId = sectionId - 13
+        console.log(`🔄 Mapeando ID do banco ${sectionId} → JSON ${searchId}`)
+      }
+      
+      const section = sectionsArray.find(s => s.id === searchId)
       
       if (section) {
         console.log(`✅ Seção ${sectionId} encontrada: "${section.titulo}"`)
